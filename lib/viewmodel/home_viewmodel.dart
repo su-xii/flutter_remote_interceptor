@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/server/remote_server.dart';
+import 'package:remote_interceptor/model/request_record.dart';
 
 // 拦截队列中的单个任务单元
 class InterceptTask {
@@ -25,6 +26,9 @@ class HomeViewModel extends ChangeNotifier {
   
   // 请求拦截队列（FIFO 先进先出）
   final List<InterceptTask> _requestQueue = [];
+  
+  // 所有请求记录列表
+  final List<RequestRecord> _requestRecords = [];
 
   // 当前拦截状态
   InterceptStatus _currentStatus = InterceptStatus.waiting;
@@ -34,6 +38,9 @@ class HomeViewModel extends ChangeNotifier {
 
   // 当前显示的 JSON 文本
   String _currentJsonText = '';
+  
+  // 计数器，用于生成唯一 ID
+  int _recordCounter = 0;
 
   HomeViewModel(this._server) {
     // 设置请求处理器
@@ -46,6 +53,7 @@ class HomeViewModel extends ChangeNotifier {
   bool get isIntercepting => _isIntercepting;
   String get currentJsonText => _currentJsonText;
   int get queueLength => _requestQueue.length;
+  List<RequestRecord> get requestRecords => List.unmodifiable(_requestRecords);
 
   // 获取状态配置信息
   Map<String, dynamic> getStatusConfig() {
@@ -62,16 +70,34 @@ class HomeViewModel extends ChangeNotifier {
 
   // 1. WebSocket 收到请求时的处理函数
   Future<Map<String, dynamic>> _handleRequest(Map<String, dynamic> requestData) async {
-    if (!_isIntercepting) return requestData;
-
-    // 提取自带的 requestId
+    // 生成唯一 ID
+    _recordCounter++;
+    final String recordId = 'req_$_recordCounter';
     final String requestId = requestData['requestId']?.toString() ?? 'unknown';
+    
+    // 创建请求记录
+    final record = RequestRecord(
+      id: recordId,
+      requestId: requestId,
+      originalData: Map<String, dynamic>.from(requestData),
+      timestamp: DateTime.now(),
+      state: _isIntercepting ? InterceptState.interceptedPending : InterceptState.notIntercepted,
+    );
+    
+    _requestRecords.add(record);
+    notifyListeners();
+    
+    if (!_isIntercepting) {
+      // 如果未开启拦截，直接放行
+      return requestData;
+    }
+
     const JsonEncoder encoder = JsonEncoder.withIndent('  ');
     final String jsonText = encoder.convert(requestData);
 
     // 创建 Completer 并加入队列
     final completer = Completer<Map<String, dynamic>>();
-    _requestQueue.add(InterceptTask(requestId, jsonText, completer));
+    _requestQueue.add(InterceptTask(recordId, jsonText, completer));
 
     // 如果是第一个请求，立刻更新 UI 展示它的数据
     if (_requestQueue.length == 1) {
@@ -82,6 +108,15 @@ class HomeViewModel extends ChangeNotifier {
 
     // 当前请求在此处阻塞，等待队列轮到自己被 complete
     final modifiedData = await completer.future;
+    
+    // 更新记录状态为已处理
+    final recordIndex = _requestRecords.indexWhere((r) => r.id == recordId);
+    if (recordIndex != -1) {
+      _requestRecords[recordIndex].state = InterceptState.interceptedProcessed;
+      _requestRecords[recordIndex].modifiedData = modifiedData;
+      notifyListeners();
+    }
+    
     return modifiedData;
   }
 
@@ -113,6 +148,36 @@ class HomeViewModel extends ChangeNotifier {
     } catch (e) {
       // 错误处理需要在 UI 层进行，这里抛出异常
       rethrow;
+    }
+  }
+  
+  // 3. 放行指定 ID 的请求（从列表中）
+  void releaseRequestById(String recordId, Map<String, dynamic> modifiedData) {
+    final queueIndex = _requestQueue.indexWhere((task) => task.requestId == recordId);
+    
+    if (queueIndex != -1) {
+      // 在队列中找到，放行它
+      final task = _requestQueue[queueIndex];
+      task.completer.complete(modifiedData);
+      _requestQueue.removeAt(queueIndex);
+      
+      // 更新记录状态
+      final recordIndex = _requestRecords.indexWhere((r) => r.id == recordId);
+      if (recordIndex != -1) {
+        _requestRecords[recordIndex].state = InterceptState.interceptedProcessed;
+        _requestRecords[recordIndex].modifiedData = modifiedData;
+      }
+      
+      // 如果当前正在编辑的是这个请求，更新显示
+      if (_requestQueue.isNotEmpty && _requestQueue.first.requestId == recordId) {
+        _currentStatus = InterceptStatus.blocked;
+        _currentJsonText = _requestQueue.first.jsonData;
+      } else if (_requestQueue.isEmpty) {
+        _currentStatus = InterceptStatus.waiting;
+        _currentJsonText = '';
+      }
+      
+      notifyListeners();
     }
   }
 
