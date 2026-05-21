@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:re_editor/re_editor.dart';
+import 'package:re_highlight/languages/json.dart';
+import 'package:re_highlight/styles/atom-one-light.dart';
 
 import '../providers.dart';
 import '../viewmodel/home_viewmodel.dart';
@@ -17,7 +20,6 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late TextEditingController _controller;
   
   // 状态监听器
   StreamController<ServerStatus>? _serverStatusController;
@@ -27,7 +29,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _controller = TextEditingController();
     
     // 初始化状态监听器
     _serverStatusController = StreamController<ServerStatus>.broadcast();
@@ -37,7 +38,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
   @override
   void dispose() {
     _tabController.dispose();
-    _controller.dispose();
     _serverStatusController?.close();
     _clientStatusController?.close();
     super.dispose();
@@ -48,11 +48,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     final viewModel = ref.watch(homeViewModelProvider);
     final statusConfig = viewModel.getStatusConfig();
     final server = ref.watch(remoteServerProvider);
-
-    // 同步 ViewModel 的文本到控制器（仅在文本变化时）
-    if (_controller.text != viewModel.currentJsonText) {
-      _controller.text = viewModel.currentJsonText;
-    }
     
     // 设置状态监听
     server.onStatusChanged = (status) {
@@ -338,19 +333,37 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
-              controller: _controller,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.all(12),
-                hintText: '等待拦截请求...',
+            child: CodeEditor(
+              controller: viewModel.editorController,
+              readOnly: viewModel.queueLength == 0,
+              style: CodeEditorStyle(
+                fontSize: 14,
+                codeTheme: CodeHighlightTheme(
+                  languages: {
+                    'json': CodeHighlightThemeMode(
+                      mode: langJson,
+                    ),
+                  },
+                  theme: atomOneLightTheme,
+                ),
               ),
-              style: const TextStyle(fontSize: 14, fontFamily: 'monospace'),
-              onChanged: (text) {
-                viewModel.updateJsonText(text);
+              indicatorBuilder: (context, editingController, chunkController, notifier) {
+                return Row(
+                  children: [
+                    DefaultCodeLineNumber(
+                      controller: editingController,
+                      notifier: notifier,
+                    ),
+                    DefaultCodeChunkIndicator(
+                      width: 20,
+                      controller: chunkController,
+                      notifier: notifier,
+                    ),
+                  ],
+                );
+              },
+              onChanged: (value) {
+                viewModel.updateJsonText(viewModel.editorController.text);
               },
             ),
           ),

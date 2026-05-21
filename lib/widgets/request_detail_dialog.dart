@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:re_editor/re_editor.dart';
+import 'package:re_highlight/languages/json.dart';
+import 'package:re_highlight/styles/atom-one-light.dart';
 import 'package:remote_interceptor/providers.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 
@@ -18,15 +21,15 @@ class RequestDetailDialog extends ConsumerStatefulWidget {
 }
 
 class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
-  late TextEditingController _controller;
+  late CodeLineEditingController _controller;
   bool _isModified = false;
 
   @override
   void initState() {
     super.initState();
     const JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    _controller = TextEditingController(
-      text: encoder.convert(widget.record.displayData),
+    _controller = CodeLineEditingController.fromText(
+      encoder.convert(widget.record.displayData),
     );
     _controller.addListener(_onTextChanged);
   }
@@ -90,18 +93,40 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
 
             // JSON 编辑器
             Expanded(
-              child: TextField(
+              child: CodeEditor(
                 controller: _controller,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.all(12),
-                  hintText: 'JSON 数据',
+                readOnly: !isPending,
+                style: CodeEditorStyle(
+                  fontSize: 14,
+                  codeTheme: CodeHighlightTheme(
+                    languages: {
+                      'json': CodeHighlightThemeMode(
+                        mode: langJson,
+                      ),
+                    },
+                    theme: atomOneLightTheme,
+                  ),
                 ),
-                style: const TextStyle(fontSize: 14, fontFamily: 'monospace'),
-                readOnly: !isPending, // 只有待处理的请求可以编辑
+                indicatorBuilder: (context, editingController, chunkController, notifier) {
+                  return Row(
+                    children: [
+                      DefaultCodeLineNumber(
+                        controller: editingController,
+                        notifier: notifier,
+                      ),
+                      DefaultCodeChunkIndicator(
+                        width: 20,
+                        controller: chunkController,
+                        notifier: notifier,
+                      ),
+                    ],
+                  );
+                },
+                onChanged: (value) {
+                  setState(() {
+                    _isModified = true;
+                  });
+                },
               ),
             ),
 

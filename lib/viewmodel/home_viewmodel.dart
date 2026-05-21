@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:re_editor/re_editor.dart';
 import 'package:remote_interceptor/server/remote_server.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 
@@ -39,10 +40,16 @@ class HomeViewModel extends ChangeNotifier {
   // 当前显示的 JSON 文本
   String _currentJsonText = '';
   
+  // 代码编辑器控制器
+  late CodeLineEditingController editorController;
+  
   // 计数器，用于生成唯一 ID
   int _recordCounter = 0;
 
   HomeViewModel(this._server) {
+    // 初始化编辑器控制器
+    editorController = CodeLineEditingController();
+    
     // 设置请求处理器
     _server.requestHandler = _handleRequest;
     // 注意：Server 的启动由 App 生命周期管理，不在 ViewModel 中启动
@@ -103,6 +110,8 @@ class HomeViewModel extends ChangeNotifier {
     if (_requestQueue.length == 1) {
       _currentStatus = InterceptStatus.blocked;
       _currentJsonText = jsonText;
+      // 同步更新编辑器控制器的文本
+      editorController.text = jsonText;
       notifyListeners();
     }
 
@@ -137,10 +146,14 @@ class HomeViewModel extends ChangeNotifier {
         // 如果有，自动把下一个请求的原始数据显示在输入框中，等待处理
         _currentStatus = InterceptStatus.blocked;
         _currentJsonText = _requestQueue.first.jsonData;
+        // 同步更新编辑器控制器的文本
+        editorController.text = _currentJsonText;
       } else {
         // 如果队列为空，恢复等待状态
         _currentStatus = InterceptStatus.waiting;
         _currentJsonText = '';
+        // 清空编辑器控制器的文本
+        editorController.text = '';
       }
       
       notifyListeners();
@@ -172,9 +185,13 @@ class HomeViewModel extends ChangeNotifier {
       if (_requestQueue.isNotEmpty && _requestQueue.first.requestId == recordId) {
         _currentStatus = InterceptStatus.blocked;
         _currentJsonText = _requestQueue.first.jsonData;
+        // 同步更新编辑器控制器的文本
+        editorController.text = _currentJsonText;
       } else if (_requestQueue.isEmpty) {
         _currentStatus = InterceptStatus.waiting;
         _currentJsonText = '';
+        // 清空编辑器控制器的文本
+        editorController.text = '';
       }
       
       notifyListeners();
@@ -190,11 +207,17 @@ class HomeViewModel extends ChangeNotifier {
   // 更新 JSON 文本
   void updateJsonText(String text) {
     _currentJsonText = text;
+    // 同步更新编辑器控制器的文本（避免循环调用）
+    if (editorController.text != text) {
+      editorController.text = text;
+    }
     notifyListeners();
   }
 
   @override
   void dispose() {
+    // 销毁编辑器控制器
+    editorController.dispose();
     // 注意：不再在 ViewModel 中销毁 Server，由 App 生命周期统一管理
     super.dispose();
   }
