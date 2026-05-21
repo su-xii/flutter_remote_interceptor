@@ -62,12 +62,6 @@ class RemoteServer {
       _discoveryClient = DiscoveryClient();
       _server = RemoteResponseServer();
       _server!.requestHandler = (data) async{
-        if(!_isDiscovered) {
-          _discoveryClient?.stop();
-          _isDiscovered  = true;
-          _updateStatus(ServerStatus.running);
-          _updateClientStatus(ClientConnectionStatus.connected);
-        }
         if (requestHandler != null) {
           data = await requestHandler!(data);
         }
@@ -77,6 +71,14 @@ class RemoteServer {
         _isDiscovered = false;
         _updateClientStatus(ClientConnectionStatus.disconnected);
         _discoveryClient?.start();
+      };
+      _server!.onClientConnect = (){
+        if(!_isDiscovered) {
+          _discoveryClient?.stop();
+          _isDiscovered  = true;
+          _updateStatus(ServerStatus.running);
+          _updateClientStatus(ClientConnectionStatus.connected);
+        }
       };
       
       await _discoveryClient!.start();
