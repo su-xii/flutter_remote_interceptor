@@ -30,6 +30,9 @@ class RemoteServer {
   bool _isDiscovered = false;
   bool _isStarted = false;
   
+  // 设备发现回调
+  Function(String serverIp, int serverPort, String message)? onDeviceFound;
+  
   // 服务器状态
   ServerStatus _status = ServerStatus.stopped;
   ServerStatus get status => _status;
@@ -60,6 +63,9 @@ class RemoteServer {
       _updateClientStatus(ClientConnectionStatus.disconnected);
       
       _discoveryClient = DiscoveryClient();
+      _discoveryClient!.onDeviceFound = (String serverIp, int serverPort, String message) {
+        onDeviceFound?.call(serverIp, serverPort, message);
+      };
       _server = RemoteResponseServer();
       _server!.requestHandler = (data) async{
         if (requestHandler != null) {
@@ -100,6 +106,21 @@ class RemoteServer {
     _isStarted = false;
     _updateStatus(ServerStatus.stopped);
     _updateClientStatus(ClientConnectionStatus.disconnected);
+  }
+
+  /// 启动设备发现
+  void startDeviceDiscovery() {
+    _discoveryClient?.start();
+  }
+
+  /// 停止设备发现
+  void stopDeviceDiscovery() {
+    _discoveryClient?.stop();
+  }
+
+  /// 连接到指定设备
+  void connectToDevice(String ip, int port) {
+    _discoveryClient?.send(ip, port, RemoteConfig.connectSignal);
   }
 
 }

@@ -9,6 +9,7 @@ import '../viewmodel/home_viewmodel.dart';
 import '../widgets/request_list_page.dart';
 import '../widgets/server_status_indicator.dart';
 import '../server/remote_server.dart';
+import 'device_discovery_page.dart';
 import 'dart:async';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -70,6 +71,42 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
           ],
         ),
         actions: [
+          // 切换设备按钮
+          IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            onPressed: () {
+              // 显示确认对话框
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('切换设备'),
+                  content: const Text('确定要断开当前连接并选择其他设备吗？'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('取消'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        // 使用 pushReplacement 替换当前页面，确保一次服务生命周期只选择一条设备
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const DeviceDiscoveryPage()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('确定'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            tooltip: '切换设备',
+          ),
           // 服务端和客户端状态
           Padding(
             padding: const EdgeInsets.only(right: 8),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/page/home_page.dart';
+import 'package:remote_interceptor/page/device_discovery_page.dart';
 import 'package:remote_interceptor/providers.dart';
 import 'package:remote_interceptor/app_lifecycle_manager.dart';
 
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: HomePage(),
+      home: DeviceDiscoveryPage(),
       debugShowCheckedModeBanner: false,
     );
   }
