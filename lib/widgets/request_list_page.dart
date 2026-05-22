@@ -53,8 +53,8 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(homeViewModelProvider);
-    final records = viewModel.requestRecords;
+    final state = ref.watch(homeViewModelProvider);
+    final records = state.requestRecords;
 
     // 当有新记录时，自动滚动到底部
     WidgetsBinding.instance.addPostFrameCallback((_) {

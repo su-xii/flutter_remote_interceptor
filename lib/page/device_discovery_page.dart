@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
-import '../viewmodel/device_discovery_viewmodel.dart';
 import '../model/device.dart';
+import '../state/device_discovery_state.dart';
 import 'home_page.dart';
 
 class DeviceDiscoveryPage extends ConsumerStatefulWidget {
@@ -16,23 +16,23 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
   @override
   void initState() {
     super.initState();
-    // 页面加载时自动开始扫描
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(deviceDiscoveryViewModelProvider).startScanning();
+      final server = ref.read(remoteServerProvider);
+      ref.read(deviceDiscoveryViewModelProvider.notifier).startScanning(server);
     });
   }
 
   @override
   void dispose() {
-    // 页面销毁时停止扫描
-    ref.read(deviceDiscoveryViewModelProvider).stopScanning();
+    final server = ref.read(remoteServerProvider);
+    ref.read(deviceDiscoveryViewModelProvider.notifier).stopScanning(server);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(deviceDiscoveryViewModelProvider);
-    final devices = viewModel.onlineDevices;
+    final state = ref.watch(deviceDiscoveryViewModelProvider);
+    final devices = state.onlineDevices;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,29 +40,28 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
-          // 刷新按钮
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              // 重新扫描
-              viewModel.stopScanning();
-              viewModel.clearDevices();
-              viewModel.startScanning();
+              final server = ref.read(remoteServerProvider);
+              final notifier = ref.read(deviceDiscoveryViewModelProvider.notifier);
+              notifier.stopScanning(server);
+              notifier.clearDevices();
+              notifier.startScanning(server);
             },
           ),
         ],
       ),
       body: Column(
         children: [
-          // 扫描状态提示
           Container(
             padding: const EdgeInsets.all(16),
             color: Theme.of(context).cardColor,
             child: Row(
               children: [
                 Icon(
-                  viewModel.isScanning ? Icons.wifi_tethering : Icons.wifi_off,
-                  color: viewModel.isScanning ? Colors.green : Colors.grey,
+                  state.isScanning ? Icons.wifi_tethering : Icons.wifi_off,
+                  color: state.isScanning ? Colors.green : Colors.grey,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -71,11 +70,11 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        viewModel.isScanning ? '正在扫描设备...' : '已停止扫描',
+                        state.isScanning ? '正在扫描设备...' : '已停止扫描',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: viewModel.isScanning ? Colors.green : Colors.grey,
+                          color: state.isScanning ? Colors.green : Colors.grey,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -89,14 +88,15 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                     ],
                   ),
                 ),
-                // 扫描开关
                 Switch(
-                  value: viewModel.isScanning,
+                  value: state.isScanning,
                   onChanged: (value) {
+                    final server = ref.read(remoteServerProvider);
+                    final notifier = ref.read(deviceDiscoveryViewModelProvider.notifier);
                     if (value) {
-                      viewModel.startScanning();
+                      notifier.startScanning(server);
                     } else {
-                      viewModel.stopScanning();
+                      notifier.stopScanning(server);
                     }
                   },
                   activeColor: Colors.green,
@@ -105,7 +105,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             ),
           ),
           
-          // 设备列表
           Expanded(
             child: devices.isEmpty
                 ? Center(
@@ -119,7 +118,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          viewModel.isScanning ? '正在搜索设备...' : '未发现设备',
+                          state.isScanning ? '正在搜索设备...' : '未发现设备',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey[600],
@@ -127,7 +126,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          viewModel.isScanning 
+                          state.isScanning 
                               ? '请确保手机和电脑在同一网络' 
                               : '点击左上角开关开始扫描',
                           style: TextStyle(
@@ -143,7 +142,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                     itemCount: devices.length,
                     itemBuilder: (context, index) {
                       final device = devices[index];
-                      return _buildDeviceCard(context, viewModel, device);
+                      return _buildDeviceCard(context, state, device);
                     },
                   ),
           ),
@@ -152,7 +151,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     );
   }
 
-  Widget _buildDeviceCard(BuildContext context, DeviceDiscoveryViewModel viewModel, Device device) {
+  Widget _buildDeviceCard(BuildContext context, DeviceDiscoveryState state, Device device) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -161,7 +160,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
       ),
       child: InkWell(
         onTap: () async {
-          // 显示连接确认对话框
           final confirmed = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
@@ -185,14 +183,12 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
           );
 
           if (confirmed == true) {
-            // 连接到设备
-            viewModel.connectToDevice(device);
+            final server = ref.read(remoteServerProvider);
+            ref.read(deviceDiscoveryViewModelProvider.notifier).connectToDevice(device, server);
             
-            // 延迟一下再跳转，让用户看到提示
             await Future.delayed(const Duration(milliseconds: 500));
             
             if (mounted) {
-              // 显示成功提示
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('已连接到 ${device.info}'),
@@ -200,7 +196,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                 ),
               );
               
-              // 使用 pushReplacement 替换当前页面，确保一次服务生命周期只选择一条设备
               await Future.delayed(const Duration(milliseconds: 800));
               if (mounted) {
                 Navigator.pushReplacement(
@@ -216,7 +211,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // 设备图标
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -231,7 +225,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
               ),
               const SizedBox(width: 16),
               
-              // 设备信息
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +274,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                 ),
               ),
               
-              // 连接箭头
               Icon(
                 Icons.arrow_forward_ios,
                 size: 16,

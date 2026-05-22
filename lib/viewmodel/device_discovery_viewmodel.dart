@@ -1,122 +1,78 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:remote_interceptor/model/device.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/server/remote_server.dart';
+import 'package:remote_interceptor/state/device_discovery_state.dart';
+import 'package:remote_interceptor/model/device.dart';
 
-class DeviceDiscoveryViewModel extends ChangeNotifier {
-  final RemoteServer _server;
-  
-  // 设备列表（以 IP 为 key）
-  final Map<String, Device> _devices = {};
-  
-  // 定时器，用于清理离线设备
-  Timer? _cleanupTimer;
-  
-  // 是否正在扫描
-  bool _isScanning = false;
-  bool get isScanning => _isScanning;
-  
-  // 标记是否已销毁
-  bool _disposed = false;
-  
-  // 获取在线设备列表（按最后发现时间排序）
-  List<Device> get onlineDevices {
-    final devices = _devices.values.where((d) => d.isOnline).toList();
-    devices.sort((a, b) => b.lastSeenTime.compareTo(a.lastSeenTime));
-    return devices;
+class DeviceDiscoveryViewModel extends Notifier<DeviceDiscoveryState> {
+  Timer? _debounceTimer;
+
+  @override
+  DeviceDiscoveryState build() {
+    return DeviceDiscoveryState.initial();
   }
-  
-  // 获取所有设备列表
-  List<Device> get allDevices {
-    final devices = _devices.values.toList();
-    devices.sort((a, b) => b.lastSeenTime.compareTo(a.lastSeenTime));
-    return devices;
+
+  void startScanning(RemoteServer server) {
+    if (state.isScanning) return;
+
+    state = state.copyWith(isScanning: true);
+
+    server.onDeviceFound = (String serverIp, int serverPort, String message) {
+      _updateDevice(serverIp, serverPort, message);
+    };
+
+    server.startDeviceDiscovery();
   }
-  
-  DeviceDiscoveryViewModel(this._server);
-  
-  /// 开始扫描设备
-  void startScanning() {
-    if (_isScanning) return;
-    
-    _isScanning = true;
-    notifyListeners();
-    
-    // 设置设备发现回调
-    _server.onDeviceFound = (String serverIp, int serverPort, String message) {
-      if (_disposed) return; // 如果已销毁，不处理
-      
-      if (_devices.containsKey(serverIp)) {
-        // 更新已存在设备的最后发现时间
-        _devices[serverIp]!.lastSeenTime = DateTime.now();
+
+  void _updateDevice(String serverIp, int serverPort, String message) {
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      final newDevices = Map<String, Device>.from(state.devices);
+      final now = DateTime.now();
+
+      if (newDevices.containsKey(serverIp)) {
+        final existingDevice = newDevices[serverIp]!;
+        final lastSeenDiff = now.difference(existingDevice.lastSeenTime).inSeconds;
+        
+        if (lastSeenDiff < 5) {
+          return;
+        }
+
+        newDevices[serverIp] = existingDevice.copyWith(
+          lastSeenTime: now,
+        );
       } else {
-        // 添加新设备
-        _devices[serverIp] = Device(
+        newDevices[serverIp] = Device(
           serverIp: serverIp,
           port: serverPort,
           info: message,
-          lastSeenTime: DateTime.now(),
+          lastSeenTime: now,
         );
       }
-      if (!_disposed) {
-        notifyListeners();
-      }
-    };
-    
-    // 启动定期清理离线设备
-    _cleanupTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      _removeOfflineDevices();
+
+      state = state.copyWith(devices: newDevices);
     });
-    
-    // 启动服务器端的设备发现
-    _server.startDeviceDiscovery();
   }
-  
-  /// 停止扫描设备
-  void stopScanning() {
-    _isScanning = false;
-    _cleanupTimer?.cancel();
-    _cleanupTimer = null;
-    
-    // 清除回调引用，防止页面销毁后仍然触发
-    if (_server.onDeviceFound != null) {
-      _server.onDeviceFound = null;
+
+  void stopScanning(RemoteServer server) {
+    _debounceTimer?.cancel();
+    state = state.copyWith(isScanning: false);
+
+    if (server.onDeviceFound != null) {
+      server.onDeviceFound = null;
     }
-    
-    _server.stopDeviceDiscovery();
-    if (!_disposed) {
-      notifyListeners();
-    }
+
+    server.stopDeviceDiscovery();
   }
-  
-  /// 移除离线设备
-  void _removeOfflineDevices() {
-    if (_disposed) return; // 如果已销毁，不处理
-    
-    final now = DateTime.now().millisecondsSinceEpoch;
-    _devices.removeWhere((key, device) {
-      return now - device.lastSeenTime.millisecondsSinceEpoch >= 4000;
-    });
-    if (!_disposed) {
-      notifyListeners();
-    }
+
+  void connectToDevice(Device device, RemoteServer server) {
+    server.connectToDevice(device.serverIp, device.port);
   }
-  
-  /// 连接到指定设备
-  void connectToDevice(Device device) {
-    _server.connectToDevice(device.serverIp, device.port);
-  }
-  
-  /// 清除所有设备
+
   void clearDevices() {
-    _devices.clear();
-    notifyListeners();
-  }
-  
-  @override
-  void dispose() {
-    _disposed = true;
-    stopScanning();
-    super.dispose();
+    state = state.copyWith(devices: {});
   }
 }

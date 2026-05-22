@@ -1,16 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/json.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
-
 import '../providers.dart';
-import '../viewmodel/home_viewmodel.dart';
 import '../widgets/request_list_page.dart';
 import '../widgets/server_status_indicator.dart';
 import '../server/remote_server.dart';
+import '../state/home_state.dart';
+import '../state/server_state.dart';
 import 'device_discovery_page.dart';
-import 'dart:async';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -21,8 +21,8 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final CodeLineEditingController _editorController = CodeLineEditingController();
   
-  // 状态监听器
   StreamController<ServerStatus>? _serverStatusController;
   StreamController<ClientConnectionStatus>? _clientStatusController;
 
@@ -31,9 +31,11 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     
-    // 初始化状态监听器
     _serverStatusController = StreamController<ServerStatus>.broadcast();
     _clientStatusController = StreamController<ClientConnectionStatus>.broadcast();
+    
+    final server = ref.read(remoteServerProvider);
+    ref.read(homeViewModelProvider.notifier).setRequestHandler(server);
   }
 
   @override
@@ -41,22 +43,25 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     _tabController.dispose();
     _serverStatusController?.close();
     _clientStatusController?.close();
+    _editorController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(homeViewModelProvider);
-    final statusConfig = viewModel.getStatusConfig();
+    final state = ref.watch(homeViewModelProvider);
     final server = ref.watch(remoteServerProvider);
     
-    // 设置状态监听
     server.onStatusChanged = (status) {
       _serverStatusController?.add(status);
     };
     server.onClientStatusChanged = (status) {
       _clientStatusController?.add(status);
     };
+
+    if (state.currentJsonText.isNotEmpty && _editorController.text != state.currentJsonText) {
+      _editorController.text = state.currentJsonText;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -71,11 +76,9 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
           ],
         ),
         actions: [
-          // 切换设备按钮
           IconButton(
             icon: const Icon(Icons.swap_horiz),
             onPressed: () {
-              // 显示确认对话框
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -89,7 +92,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        // 使用 pushReplacement 替换当前页面，确保一次服务生命周期只选择一条设备
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (context) => const DeviceDiscoveryPage()),
@@ -107,13 +109,11 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
             },
             tooltip: '切换设备',
           ),
-          // 服务端和客户端状态
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 服务端状态
                 StreamBuilder<ServerStatus>(
                   stream: _serverStatusController?.stream,
                   initialData: server.status,
@@ -127,7 +127,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                   },
                 ),
                 const SizedBox(width: 6),
-                // 客户端状态
                 StreamBuilder<ClientConnectionStatus>(
                   stream: _clientStatusController?.stream,
                   initialData: server.clientStatus,
@@ -148,62 +147,13 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 1: 当前请求编辑器
-          _buildEditorTab(viewModel, statusConfig),
-          // Tab 2: 请求记录列表
+          _buildEditorTab(state),
           const RequestListPage(),
         ],
       ),
     );
   }
-  
-  /// 创建服务器状态监听器
-  ValueNotifier<ServerStatus> _createServerStatusListener(RemoteServer server) {
-    final notifier = ValueNotifier<ServerStatus>(server.status);
-    server.onStatusChanged = (status) {
-      notifier.value = status;
-    };
-    return notifier;
-  }
-  
-  /// 获取状态颜色
-  Color _getStatusColor(InterceptStatus status) {
-    switch (status) {
-      case InterceptStatus.waiting:
-        return Colors.green;
-      case InterceptStatus.blocked:
-        return Colors.red;
-      case InterceptStatus.released:
-        return Colors.orange;
-    }
-  }
-  
-  /// 获取状态图标
-  IconData _getStatusIcon(InterceptStatus status) {
-    switch (status) {
-      case InterceptStatus.waiting:
-        return Icons.check_circle_outline;
-      case InterceptStatus.blocked:
-        return Icons.block;
-      case InterceptStatus.released:
-        return Icons.send;
-    }
-  }
-  
-  /// 获取状态文本
-  String _getStatusText(InterceptStatus status, int queueLength) {
-    switch (status) {
-      case InterceptStatus.waiting:
-        return '等待拦截请求...';
-      case InterceptStatus.blocked:
-        return '已拦截 (队列中还有 $queueLength 个请求)';
-      case InterceptStatus.released:
-        return '数据已放行';
-    }
-  }
-  
-  // ========== 服务端状态 ==========
-  
+
   String _getServerStatusText(ServerStatus status) {
     switch (status) {
       case ServerStatus.starting:
@@ -214,7 +164,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         return '服务已停止';
     }
   }
-  
+
   IconData _getServerStatusIcon(ServerStatus status) {
     switch (status) {
       case ServerStatus.starting:
@@ -225,7 +175,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         return Icons.stop_circle;
     }
   }
-  
+
   Color _getServerStatusColor(ServerStatus status) {
     switch (status) {
       case ServerStatus.starting:
@@ -236,9 +186,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         return Colors.grey;
     }
   }
-  
-  // ========== 客户端状态 ==========
-  
+
   String _getClientStatusText(ClientConnectionStatus status) {
     switch (status) {
       case ClientConnectionStatus.disconnected:
@@ -247,7 +195,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         return '客户端已连接';
     }
   }
-  
+
   IconData _getClientStatusIcon(ClientConnectionStatus status) {
     switch (status) {
       case ClientConnectionStatus.disconnected:
@@ -256,7 +204,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         return Icons.phone_iphone;
     }
   }
-  
+
   Color _getClientStatusColor(ClientConnectionStatus status) {
     switch (status) {
       case ClientConnectionStatus.disconnected:
@@ -266,52 +214,52 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     }
   }
 
-  Widget _buildEditorTab(HomeViewModel viewModel, Map<String, dynamic> statusConfig) {
+  Widget _buildEditorTab(HomeState state) {
+    final notifier = ref.read(homeViewModelProvider.notifier);
+    
     return Column(
       children: [
-        // 顶部控制栏
         Container(
           padding: const EdgeInsets.all(16),
           color: Theme.of(context).cardColor,
           child: Row(
             children: [
-              // 拦截开关
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: viewModel.isIntercepting 
+                    color: state.isIntercepting 
                         ? Colors.orange.withOpacity(0.1) 
                         : Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: viewModel.isIntercepting ? Colors.orange : Colors.grey,
+                      color: state.isIntercepting ? Colors.orange : Colors.grey,
                       width: 1.5,
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        viewModel.isIntercepting 
+                        state.isIntercepting 
                             ? Icons.shield_outlined 
                             : Icons.shield_outlined,
-                        color: viewModel.isIntercepting ? Colors.orange : Colors.grey,
+                        color: state.isIntercepting ? Colors.orange : Colors.grey,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        viewModel.isIntercepting ? '拦截开启' : '拦截关闭',
+                        state.isIntercepting ? '拦截开启' : '拦截关闭',
                         style: TextStyle(
-                          color: viewModel.isIntercepting ? Colors.orange : Colors.grey,
+                          color: state.isIntercepting ? Colors.orange : Colors.grey,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
                       ),
                       const Spacer(),
                       Switch(
-                        value: viewModel.isIntercepting,
+                        value: state.isIntercepting,
                         onChanged: (value) {
-                          viewModel.toggleIntercepting(value);
+                          notifier.toggleIntercepting(value);
                         },
                         activeColor: Colors.orange,
                       ),
@@ -320,11 +268,10 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                 ),
               ),
               const SizedBox(width: 12),
-              // 放行按钮
               ElevatedButton.icon(
-                onPressed: viewModel.queueLength > 0 ? () {
+                onPressed: state.requestQueue.length > 0 ? () {
                   try {
-                    viewModel.handleSave();
+                    notifier.handleSave();
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -348,7 +295,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
             ],
           ),
         ),
-        // 队列提示
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
@@ -360,19 +306,18 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
               ),
               const SizedBox(width: 6),
               Text(
-                '支持多请求排队拦截，先到先处理。当前队列长度：${viewModel.queueLength}',
+                '支持多请求排队拦截，先到先处理。当前队列长度：${state.requestQueue.length}',
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
         ),
-        // JSON 编辑器
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: CodeEditor(
-              controller: viewModel.editorController,
-              readOnly: viewModel.queueLength == 0,
+              controller: _editorController,
+              readOnly: state.requestQueue.isEmpty,
               style: CodeEditorStyle(
                 fontSize: 14,
                 codeTheme: CodeHighlightTheme(
@@ -400,37 +345,36 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                 );
               },
               onChanged: (value) {
-                viewModel.updateJsonText(viewModel.editorController.text);
+                notifier.updateJsonText(_editorController.text);
               },
             ),
           ),
         ),
-        // 底部状态卡片
         Padding(
           padding: const EdgeInsets.all(16),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: _getStatusColor(viewModel.currentStatus).withOpacity(0.1),
+              color: _getStatusColor(state.currentStatus).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _getStatusColor(viewModel.currentStatus),
+                color: _getStatusColor(state.currentStatus),
                 width: 1.5,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  _getStatusIcon(viewModel.currentStatus),
-                  color: _getStatusColor(viewModel.currentStatus),
+                  _getStatusIcon(state.currentStatus),
+                  color: _getStatusColor(state.currentStatus),
                   size: 20,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    _getStatusText(viewModel.currentStatus, viewModel.queueLength),
+                    _getStatusText(state.currentStatus, state.requestQueue.length),
                     style: TextStyle(
-                      color: _getStatusColor(viewModel.currentStatus),
+                      color: _getStatusColor(state.currentStatus),
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -442,5 +386,38 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         ),
       ],
     );
+  }
+
+  Color _getStatusColor(InterceptStatus status) {
+    switch (status) {
+      case InterceptStatus.waiting:
+        return Colors.green;
+      case InterceptStatus.blocked:
+        return Colors.red;
+      case InterceptStatus.released:
+        return Colors.orange;
+    }
+  }
+
+  IconData _getStatusIcon(InterceptStatus status) {
+    switch (status) {
+      case InterceptStatus.waiting:
+        return Icons.check_circle_outline;
+      case InterceptStatus.blocked:
+        return Icons.block;
+      case InterceptStatus.released:
+        return Icons.send;
+    }
+  }
+
+  String _getStatusText(InterceptStatus status, int queueLength) {
+    switch (status) {
+      case InterceptStatus.waiting:
+        return '等待拦截请求...';
+      case InterceptStatus.blocked:
+        return '已拦截 (队列中还有 $queueLength 个请求)';
+      case InterceptStatus.released:
+        return '数据已放行';
+    }
   }
 }

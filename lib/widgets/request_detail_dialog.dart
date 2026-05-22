@@ -49,7 +49,6 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(homeViewModelProvider);
     final isPending = widget.record.state == InterceptState.interceptedPending;
 
     return Dialog(
@@ -187,8 +186,8 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
       final modifiedData = json.decode(_controller.text) as Map<String, dynamic>;
 
       // 调用 ViewModel 放行
-      final viewModel = ref.read(homeViewModelProvider);
-      viewModel.releaseRequestById(widget.record.id, modifiedData);
+      final notifier = ref.read(homeViewModelProvider.notifier);
+      notifier.releaseRequestById(widget.record.id, modifiedData);
 
       // 关闭弹窗
       Navigator.of(context).pop();

@@ -1,27 +1,8 @@
 import 'package:dio_remote_interceptor/dio_remote_interceptor.dart';
-
-/// 服务端状态枚举
-enum ServerStatus {
-  starting,   // 服务启动中
-  running,    // 服务运行中
-  stopped,    // 服务已停止
-}
-
-/// 客户端连接状态
-enum ClientConnectionStatus {
-  disconnected,  // 客户端未连接
-  connected,     // 客户端已连接
-}
+import 'package:remote_interceptor/state/server_state.dart';
 
 class RemoteServer {
-  // 单例模式
-  static final RemoteServer _instance = RemoteServer._internal();
-  
-  factory RemoteServer() {
-    return _instance;
-  }
-  
-  RemoteServer._internal();
+  RemoteServer();
 
   RequestHandler? requestHandler;
 
@@ -98,7 +79,7 @@ class RemoteServer {
     }
   }
 
-  Future<void> dispose() async{
+  Future<void> stop() async{
     if (!_isStarted) return;
     
     await _server?.stop();

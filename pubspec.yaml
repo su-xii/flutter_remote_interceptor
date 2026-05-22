@@ -36,8 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   dio_remote_interceptor:
     path: F:/Dart/dio_remote_interceptor
-#  riverpod: ^3.2.1
-  flutter_riverpod: ^3.3.1
+  flutter_riverpod: ^2.5.0
   re_editor: ^0.8.0
 
 dev_dependencies:

@@ -29,4 +29,18 @@ class Device {
   
   @override
   int get hashCode => serverIp.hashCode;
+
+  Device copyWith({
+    String? serverIp,
+    int? port,
+    String? info,
+    DateTime? lastSeenTime,
+  }) {
+    return Device(
+      serverIp: serverIp ?? this.serverIp,
+      port: port ?? this.port,
+      info: info ?? this.info,
+      lastSeenTime: lastSeenTime ?? this.lastSeenTime,
+    );
+  }
 }
