@@ -16,9 +16,9 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final server = ref.read(remoteServerProvider);
-      ref.read(deviceDiscoveryViewModelProvider.notifier).startScanning(server);
+      await ref.read(deviceDiscoveryViewModelProvider.notifier).startScanning(server);
     });
   }
 

@@ -37,7 +37,7 @@ class RemoteServer {
   }
 
   Future<void> start() async{
-    if (_isStarted) return; // 防止重复启动
+    if (_isStarted) return;
     
     try {
       _updateStatus(ServerStatus.starting);
@@ -57,7 +57,7 @@ class RemoteServer {
       _server!.onClientDisconnect = (){
         _isDiscovered = false;
         _updateClientStatus(ClientConnectionStatus.disconnected);
-        _discoveryClient?.start();
+        _startDiscoveryIfNeeded();
       };
       _server!.onClientConnect = (){
         if(!_isDiscovered) {
@@ -68,7 +68,6 @@ class RemoteServer {
         }
       };
       
-      await _discoveryClient!.start();
       await _server?.start();
       _isStarted = true;
       _updateStatus(ServerStatus.running);
@@ -76,6 +75,18 @@ class RemoteServer {
       _updateStatus(ServerStatus.stopped);
       _updateClientStatus(ClientConnectionStatus.disconnected);
       rethrow;
+    }
+  }
+
+  bool _isDiscoveryRunning = false;
+  
+  Future<void> _startDiscoveryIfNeeded() async {
+    if (_isDiscoveryRunning || _isDiscovered) return;
+    _isDiscoveryRunning = true;
+    try {
+      await _discoveryClient?.start();
+    } finally {
+      _isDiscoveryRunning = false;
     }
   }
 
@@ -90,8 +101,8 @@ class RemoteServer {
   }
 
   /// 启动设备发现
-  void startDeviceDiscovery() {
-    _discoveryClient?.start();
+  Future<void> startDeviceDiscovery() async {
+    await _startDiscoveryIfNeeded();
   }
 
   /// 停止设备发现
