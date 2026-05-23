@@ -89,42 +89,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
         backgroundColor: kPrimaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Container(
-            color: kPrimaryColor,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withOpacity(0.7),
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: const [
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.edit, size: 20),
-                      SizedBox(width: 6),
-                      Text('当前请求', style: TextStyle(fontSize: 14)),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.list, size: 20),
-                      SizedBox(width: 6),
-                      Text('请求记录', style: TextStyle(fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.swap_horiz, size: 22),
@@ -171,11 +135,159 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
           ),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildEditorTab(state, notifier),
-          const RequestListPage(),
+          // 全局控制栏 - 始终可见
+          _buildGlobalControlBar(state, notifier),
+          // Tab导航
+          _buildTabBar(),
+          // 内容区域
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildEditorTab(state, notifier),
+                const RequestListPage(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlobalControlBar(HomeState state, HomeViewModel notifier) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kBgCard,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 拦截开关
+          Expanded(
+            child: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: state.isIntercepting
+                    ? kWarningColor.withOpacity(0.1)
+                    : kTextSecondary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: state.isIntercepting ? kWarningColor : kTextSecondary.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    state.isIntercepting ? Icons.shield : Icons.shield_outlined,
+                    color: state.isIntercepting ? kWarningColor : kTextSecondary,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    state.isIntercepting ? '拦截开启' : '拦截关闭',
+                    style: TextStyle(
+                      color: state.isIntercepting ? kWarningColor : kTextSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const Spacer(),
+                  Transform.scale(
+                    scale: 0.9,
+                    child: Switch(
+                      value: state.isIntercepting,
+                      onChanged: (value) {
+                        notifier.toggleIntercepting(value);
+                      },
+                      activeColor: kWarningColor,
+                      activeTrackColor: kWarningColor.withOpacity(0.3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // 队列信息
+          Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            decoration: BoxDecoration(
+              color: kPrimaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: kPrimaryColor.withOpacity(0.2),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.queue,
+                  size: 22,
+                  color: kPrimaryColor,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '队列: ${state.requestQueue.length}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: kPrimaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      color: kBgCard,
+      child: TabBar(
+        controller: _tabController,
+        labelColor: kPrimaryColor,
+        unselectedLabelColor: kTextSecondary,
+        indicatorColor: kPrimaryColor,
+        indicatorWeight: 3,
+        indicatorSize: TabBarIndicatorSize.label,
+        tabs: const [
+          Tab(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.edit, size: 20),
+                SizedBox(width: 6),
+                Text('当前请求', style: TextStyle(fontSize: 14)),
+              ],
+            ),
+          ),
+          Tab(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.list, size: 20),
+                SizedBox(width: 6),
+                Text('请求记录', style: TextStyle(fontSize: 14)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -369,158 +481,17 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
   Widget _buildEditorTab(HomeState state, HomeViewModel notifier) {
     return Column(
       children: [
-        _buildControlPanel(state, notifier),
-        _buildQueueInfo(state.requestQueue.length),
         Expanded(
           child: _buildEditor(state),
         ),
-        _buildStatusBar(state),
+        _buildEditorBottomBar(state, notifier),
       ],
-    );
-  }
-
-  Widget _buildControlPanel(HomeState state, HomeViewModel notifier) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: state.isIntercepting
-                    ? kWarningColor.withOpacity(0.1)
-                    : kTextSecondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: state.isIntercepting ? kWarningColor : kTextSecondary.withOpacity(0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    state.isIntercepting ? Icons.shield : Icons.shield_outlined,
-                    color: state.isIntercepting ? kWarningColor : kTextSecondary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    state.isIntercepting ? '拦截开启' : '拦截关闭',
-                    style: TextStyle(
-                      color: state.isIntercepting ? kWarningColor : kTextSecondary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const Spacer(),
-                  Transform.scale(
-                    scale: 0.9,
-                    child: Switch(
-                      value: state.isIntercepting,
-                      onChanged: (value) {
-                        notifier.toggleIntercepting(value);
-                      },
-                      activeColor: kWarningColor,
-                      activeTrackColor: kWarningColor.withOpacity(0.3),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton.icon(
-            onPressed: state.requestQueue.isNotEmpty
-                ? () {
-                    try {
-                      notifier.handleSave();
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('JSON 格式错误，请检查！错误信息: $e'),
-                          backgroundColor: kErrorColor,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          margin: const EdgeInsets.all(16),
-                        ),
-                      );
-                    }
-                  }
-                : null,
-            icon: const Icon(Icons.send, size: 18),
-            label: const Text('放行'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kSuccessColor,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: kTextSecondary.withOpacity(0.2),
-              disabledForegroundColor: kTextSecondary.withOpacity(0.5),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQueueInfo(int queueLength) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: kPrimaryColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: kPrimaryColor.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.info_outline,
-              size: 16,
-              color: kPrimaryColor.withOpacity(0.7),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '支持多请求排队拦截，先到先处理。当前队列长度：$queueLength',
-                style: TextStyle(
-                  color: kPrimaryColor.withOpacity(0.8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildEditor(HomeState state) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         color: kBgCard,
         borderRadius: BorderRadius.circular(12),
@@ -571,41 +542,102 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildStatusBar(HomeState state) {
+  Widget _buildEditorBottomBar(HomeState state, HomeViewModel notifier) {
     final statusColor = _getStatusColor(state.currentStatus);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: kBgCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: statusColor.withOpacity(0.3),
-          width: 1.5,
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _getStatusIcon(state.currentStatus),
-              color: statusColor,
-              size: 18,
+          // 状态指示
+          Expanded(
+            child: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: statusColor.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _getStatusIcon(state.currentStatus),
+                      color: statusColor,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _getStatusText(state.currentStatus, state.requestQueue.length),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _getStatusText(state.currentStatus, state.requestQueue.length),
-              style: TextStyle(
-                color: statusColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+          // 放行按钮
+          SizedBox(
+            height: 56,
+            child: ElevatedButton.icon(
+              onPressed: state.requestQueue.isNotEmpty
+                  ? () {
+                      try {
+                        notifier.handleSave();
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('JSON 格式错误，请检查！错误信息: $e'),
+                            backgroundColor: kErrorColor,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            margin: const EdgeInsets.all(16),
+                          ),
+                        );
+                      }
+                    }
+                  : null,
+              icon: const Icon(Icons.send, size: 20),
+              label: const Text('放行'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kSuccessColor,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: kTextSecondary.withOpacity(0.2),
+                disabledForegroundColor: kTextSecondary.withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 0),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),

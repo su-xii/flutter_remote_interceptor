@@ -5,12 +5,30 @@ enum InterceptState {
   interceptedProcessed // 拦截已处理（已放行）
 }
 
+/// HTTP 方法枚举
+enum HttpMethod {
+  GET,
+  POST,
+  PUT,
+  DELETE,
+  PATCH,
+  OPTIONS,
+  HEAD
+}
+
 /// 请求记录模型
 class RequestRecord {
   final String id;
   final String requestId;
   final Map<String, dynamic> originalData;
   final DateTime timestamp;
+  
+  // 新增的请求信息字段
+  final String url;
+  final HttpMethod method;
+  final int statusCode;
+  final String contentType;
+  final int duration; // 响应时间（毫秒）
   
   InterceptState state;
   Map<String, dynamic>? modifiedData; // 修改后的数据（如果已编辑）
@@ -20,6 +38,11 @@ class RequestRecord {
     required this.requestId,
     required this.originalData,
     required this.timestamp,
+    this.url = 'https://example.com/api',
+    this.method = HttpMethod.GET,
+    this.statusCode = 200,
+    this.contentType = 'JSON',
+    this.duration = 100,
     this.state = InterceptState.notIntercepted,
     this.modifiedData,
   });
@@ -35,6 +58,11 @@ class RequestRecord {
     String? requestId,
     Map<String, dynamic>? originalData,
     DateTime? timestamp,
+    String? url,
+    HttpMethod? method,
+    int? statusCode,
+    String? contentType,
+    int? duration,
     InterceptState? state,
     Map<String, dynamic>? modifiedData,
   }) {
@@ -43,6 +71,11 @@ class RequestRecord {
       requestId: requestId ?? this.requestId,
       originalData: originalData ?? this.originalData,
       timestamp: timestamp ?? this.timestamp,
+      url: url ?? this.url,
+      method: method ?? this.method,
+      statusCode: statusCode ?? this.statusCode,
+      contentType: contentType ?? this.contentType,
+      duration: duration ?? this.duration,
       state: state ?? this.state,
       modifiedData: modifiedData ?? this.modifiedData,
     );
