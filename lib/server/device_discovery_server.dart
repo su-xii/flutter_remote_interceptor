@@ -1,14 +1,13 @@
 import 'package:dio_remote_interceptor/dio_remote_interceptor.dart';
 
-class DeviceDiscovery {
+class DeviceDiscoveryServer {
   final DiscoveryClient _discoveryClient = DiscoveryClient();
-  Function(String serverIp, int serverPort, String message)? onDeviceFound;
-
-  DeviceDiscovery(){
+  DeviceDiscoveryServer(){
     _discoveryClient.onDeviceFound = (String serverIp, int serverPort, String message) {
       onDeviceFound?.call(serverIp, serverPort, message);
     };
   }
+  Function(String serverIp, int serverPort, String message)? onDeviceFound;
 
   Future<void> start() async {
     await _discoveryClient.start();

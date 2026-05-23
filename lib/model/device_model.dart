@@ -1,11 +1,11 @@
 /// 设备信息模型
-class Device {
+class DeviceModel {
   final String serverIp;
   final int port;
   final String info;
   DateTime lastSeenTime; // 最后发现时间
   
-  Device({
+  DeviceModel({
     required this.serverIp,
     required this.port,
     required this.info,
@@ -24,19 +24,19 @@ class Device {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Device && other.serverIp == serverIp;
+    return other is DeviceModel && other.serverIp == serverIp;
   }
   
   @override
   int get hashCode => serverIp.hashCode;
 
-  Device copyWith({
+  DeviceModel copyWith({
     String? serverIp,
     int? port,
     String? info,
     DateTime? lastSeenTime,
   }) {
-    return Device(
+    return DeviceModel(
       serverIp: serverIp ?? this.serverIp,
       port: port ?? this.port,
       info: info ?? this.info,

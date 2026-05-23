@@ -1,148 +1,63 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:remote_interceptor/server/device_discovery_server.dart';
+import 'package:remote_interceptor/server/remote_server.dart';
 import 'package:remote_interceptor/state/device_discovery_state.dart';
-import 'package:remote_interceptor/model/device.dart';
+import 'package:remote_interceptor/model/device_model.dart';
 import 'package:remote_interceptor/router/router_util.dart';
 
-import '../providers.dart';
-import '../state/server_state.dart';
+import '../providers/providers.dart';
 
-class DeviceDiscoveryViewModel extends Notifier<DeviceDiscoveryState> {
-  Timer? _debounceTimer;
-  final List<Map<String, dynamic>> _pendingUpdates = [];
-  bool _isProcessing = false;
-  Function()? onConnectionSuccess;
-  bool _initialized = false;
+class DeviceDiscoveryViewModel extends StateNotifier<DeviceDiscoveryState> {
 
-  @override
-  DeviceDiscoveryState build() {
-    final wsServer = ref.read(gWsServerProvider);
-    wsServer.onClientStatusChanged = (status) {
-      if (status == ClientConnectionStatus.connected && state.isConnecting) {
-        state = state.copyWith(isConnecting: false);
-        onConnectionSuccess?.call();
-      }
-    };
-    
-    return DeviceDiscoveryState.initial();
-  }
-
-  void onViewInit() {
-    if (_initialized) return;
-    _initialized = true;
-    startScanning();
-  }
-
-  void onViewDispose() {
-    cleanup();
-  }
-
-  Future<void> startScanning() async {
-    if (state.isScanning) return;
-
-    state = state.copyWith(isScanning: true);
-
-    final discovery = ref.read(gDeviceDiscoveryProvider);
-    discovery.onDeviceFound = (String serverIp, int serverPort, String message) {
+  final DeviceDiscoveryServer _deviceDiscoveryServer;
+  final RemoteServer _remoteServer;
+  late final StreamSubscription<void> _clientConnectSubscription;
+  DeviceDiscoveryViewModel(this._deviceDiscoveryServer,this._remoteServer):super(DeviceDiscoveryState.initial()){
+    _clientConnectSubscription = _remoteServer.onClientConnect.listen((_) => _clientConnected());
+    _deviceDiscoveryServer.onDeviceFound = (serverIp, serverPort, message) {
       _queueUpdate(serverIp, serverPort, message);
     };
+    _deviceDiscoveryServer.start();
 
-    await discovery.start();
   }
 
-  void _queueUpdate(String serverIp, int serverPort, String message) {
-    _pendingUpdates.add({
-      'serverIp': serverIp,
-      'serverPort': serverPort,
-      'message': message,
-    });
-
-    if (!_isProcessing) {
-      _processUpdates();
-    }
+  @override
+  void dispose() async{
+    await _clientConnectSubscription.cancel();
+    _deviceDiscoveryServer.stop();
+    super.dispose();
   }
 
-  Future<void> _processUpdates() async {
-    _isProcessing = true;
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (_pendingUpdates.isEmpty) {
-      _isProcessing = false;
-      return;
-    }
-
-    final latestUpdate = _pendingUpdates.last;
-    _pendingUpdates.clear();
-
-    try {
-      _applyUpdate(
-        latestUpdate['serverIp'] as String,
-        latestUpdate['serverPort'] as int,
-        latestUpdate['message'] as String,
-      );
-    } catch (e) {
-      debugPrint('Error processing update: $e');
-    }
-
-    _isProcessing = false;
-  }
-
-  void _applyUpdate(String serverIp, int serverPort, String message) {
-    final newDevices = Map<String, Device>.from(state.devices);
-    final now = DateTime.now();
-
-    if (newDevices.containsKey(serverIp)) {
-      final existingDevice = newDevices[serverIp]!;
-      final lastSeenDiff = now.difference(existingDevice.lastSeenTime).inSeconds;
-      
-      if (lastSeenDiff < 5) {
-        return;
-      }
-
-      newDevices[serverIp] = existingDevice.copyWith(
-        lastSeenTime: now,
-      );
-    } else {
-      newDevices[serverIp] = Device(
-        serverIp: serverIp,
-        port: serverPort,
-        info: message,
-        lastSeenTime: now,
-      );
-    }
-
-    state = state.copyWith(devices: newDevices);
-  }
-
-  void stopScanning() {
-    _debounceTimer?.cancel();
-    _pendingUpdates.clear();
-    _isProcessing = false;
-    state = state.copyWith(isScanning: false);
-
-    final discovery = ref.read(gDeviceDiscoveryProvider);
-    discovery.stop();
-  }
-
-  void connectToDevice(Device device) {
-    state = state.copyWith(isConnecting: true);
-    
-    final discovery = ref.read(gDeviceDiscoveryProvider);
-    discovery.sendConnectionRequest(device.serverIp, device.port);
-  }
-
-  void navigateToHome() {
-    cleanup();
+  // 客户端连接成功
+  void _clientConnected() {
+    state = state.copyWith(isConnecting: false);
     RouterUtil.goToHome();
   }
 
-  void clearDevices() {
-    state = state.copyWith(devices: {});
+  void _queueUpdate(String serverIp, int serverPort, String message) {
+    if(state.devices.containsKey(serverIp)){
+      state = state.copyWith(devices: {
+        serverIp: state.devices[serverIp]!..lastSeenTime = DateTime.now(),
+        ...state.devices
+      });
+    }else{
+      state = state.copyWith(devices: {
+        serverIp: DeviceModel(
+          serverIp: serverIp,
+          port: serverPort,
+          info: message,
+          lastSeenTime: DateTime.now(),
+        ),
+        ...state.devices
+      });
+    }
   }
 
-  void cleanup() {
-    stopScanning();
+  void connectToDevice(DeviceModel device) {
+    state = state.copyWith(isConnecting: true);
+    _deviceDiscoveryServer.sendConnectionRequest(device.serverIp, device.port);
   }
+
 }

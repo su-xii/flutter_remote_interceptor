@@ -1,36 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/server/ws_server.dart';
+import 'package:remote_interceptor/server/remote_server.dart';
 import 'package:remote_interceptor/state/home_state.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/router/router_util.dart';
 
-import '../providers.dart';
+import '../providers/providers.dart';
 
-class HomeViewModel extends Notifier<HomeState> {
-  bool _initialized = false;
+class HomeViewModel extends StateNotifier<HomeState> {
 
-  @override
-  HomeState build() {
-    return HomeState.initial();
+  final RemoteServer _remoteServer;
+  HomeViewModel(this._remoteServer):super(HomeState.initial()){
+    _remoteServer.requestHandler = _handleRequest;
   }
 
-  void onViewInit() {
-    if (_initialized) return;
-    _initialized = true;
-    
-    final wsServer = ref.read(gWsServerProvider);
-    setRequestHandler(wsServer);
-  }
-
-  void onViewDispose() {
-    disconnectClient();
-  }
-
-  void setRequestHandler(WsServer server) {
-    server.requestHandler = _handleRequest;
-  }
 
   Future<Map<String, dynamic>> _handleRequest(Map<String, dynamic> requestData) async {
     state = state.copyWith(
@@ -125,15 +109,6 @@ class HomeViewModel extends Notifier<HomeState> {
     state = state.copyWith(isIntercepting: value);
   }
 
-  void disconnectClient() {
-    final wsServer = ref.read(gWsServerProvider);
-    wsServer.disconnectClient();
-  }
-
-  void navigateToDeviceDiscovery() {
-    RouterUtil.goToDeviceDiscovery();
-  }
-
   void updateJsonText(String text) {
     state = state.copyWith(currentJsonText: text);
   }
@@ -173,5 +148,9 @@ class HomeViewModel extends Notifier<HomeState> {
         );
       }
     }
+  }
+
+  void navigateToDeviceDiscovery() {
+    RouterUtil.goToDeviceDiscovery();
   }
 }

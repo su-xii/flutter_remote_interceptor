@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers.dart';
-import '../model/device.dart';
+import 'package:remote_interceptor/providers/viemodel_provider.dart';
+import '../providers/providers.dart';
+import '../model/device_model.dart';
 import '../state/device_discovery_state.dart';
 import '../viewmodel/device_discovery_viewmodel.dart';
 
@@ -22,19 +23,7 @@ class DeviceDiscoveryPage extends ConsumerStatefulWidget {
 }
 
 class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      ref.read(gDeviceDiscoveryViewModelProvider.notifier).onViewInit();
-    });
-  }
 
-  @override
-  void dispose() {
-    ref.read(gDeviceDiscoveryViewModelProvider.notifier).onViewDispose();
-    super.dispose();
-  }
 
   void _showAddDeviceDialog() {
     showDialog(
@@ -45,9 +34,9 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(gDeviceDiscoveryViewModelProvider);
+    final state = ref.watch(deviceDiscoveryViewModelProvider);
     final devices = state.onlineDevices;
-    final notifier = ref.read(gDeviceDiscoveryViewModelProvider.notifier);
+    final notifier = ref.read(deviceDiscoveryViewModelProvider.notifier);
 
     return Scaffold(
       backgroundColor: kBgPage,
@@ -68,18 +57,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             icon: const Icon(Icons.add_circle_outline, size: 24),
             onPressed: _showAddDeviceDialog,
             tooltip: '手动添加设备',
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              icon: const Icon(Icons.refresh, size: 22),
-              onPressed: () {
-                notifier.stopScanning();
-                notifier.clearDevices();
-                notifier.startScanning();
-              },
-              tooltip: '刷新扫描',
-            ),
           ),
         ],
       ),
@@ -206,7 +183,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     );
   }
 
-  Widget _buildDeviceList(List<Device> devices, DeviceDiscoveryState state, DeviceDiscoveryViewModel notifier) {
+  Widget _buildDeviceList(List<DeviceModel> devices, DeviceDiscoveryState state, DeviceDiscoveryViewModel notifier) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: devices.length,
@@ -217,7 +194,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     );
   }
 
-  Widget _buildDeviceCard(BuildContext context, DeviceDiscoveryState state, Device device, DeviceDiscoveryViewModel notifier) {
+  Widget _buildDeviceCard(BuildContext context, DeviceDiscoveryState state, DeviceModel device, DeviceDiscoveryViewModel notifier) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -245,28 +222,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
 
                   if (confirmed == true) {
                     notifier.connectToDevice(device);
-                    
-                    notifier.onConnectionSuccess = () {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('已连接到 ${device.info}'),
-                            backgroundColor: kSuccessColor,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            margin: const EdgeInsets.all(16),
-                          ),
-                        );
-                        
-                        Future.delayed(const Duration(milliseconds: 800), () {
-                          if (mounted) {
-                            notifier.navigateToHome();
-                          }
-                        });
-                      }
-                    };
                   }
                 },
           borderRadius: BorderRadius.circular(12),
@@ -365,7 +320,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     );
   }
 
-  Widget _buildConnectDialog(BuildContext context, Device device) {
+  Widget _buildConnectDialog(BuildContext context, DeviceModel device) {
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

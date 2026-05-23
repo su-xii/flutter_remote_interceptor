@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/application.dart';
 import 'package:remote_interceptor/router/router_util.dart';
-import 'package:remote_interceptor/providers.dart';
+import 'package:remote_interceptor/providers/providers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  initProviders();
 
   runApp(
     ProviderScope(

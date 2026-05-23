@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/providers.dart';
+import 'package:remote_interceptor/providers/providers.dart';
 
 class Application extends ConsumerStatefulWidget {
   final Widget child;
@@ -17,15 +17,13 @@ class _ApplicationState extends ConsumerState<Application> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startWsServer();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startRemoteServer());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _stopWsServer();
+    _stopRemoteServer();
     super.dispose();
   }
 
@@ -33,7 +31,7 @@ class _ApplicationState extends ConsumerState<Application> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.detached:
-        _stopWsServer();
+        _stopRemoteServer();
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.resumed:
@@ -43,20 +41,20 @@ class _ApplicationState extends ConsumerState<Application> with WidgetsBindingOb
     }
   }
 
-  Future<void> _startWsServer() async {
+  Future<void> _startRemoteServer() async {
     try {
-      final wsServer = ref.read(wsServerProvider);
-      await wsServer.start();
+      final server = ref.read(remoteServerProvider);
+      await server.start();
       debugPrint('WS Server 已启动');
     } catch (e) {
       debugPrint('启动 WS Server 失败: $e');
     }
   }
 
-  Future<void> _stopWsServer() async {
+  Future<void> _stopRemoteServer() async {
     try {
-      final wsServer = ref.read(wsServerProvider);
-      await wsServer.stop();
+      final server = ref.read(remoteServerProvider);
+      await server.stop();
       debugPrint('WS Server 已停止');
     } catch (e) {
       debugPrint('停止 WS Server 失败: $e');

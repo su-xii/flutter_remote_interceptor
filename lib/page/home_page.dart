@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/json.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
-import '../providers.dart';
+import 'package:remote_interceptor/providers/viemodel_provider.dart';
+import '../providers/providers.dart';
+import '../state/server_status_state.dart';
 import '../widgets/request_list_page.dart';
 import '../widgets/server_status_indicator.dart';
 import '../state/home_state.dart';
-import '../state/server_state.dart';
 import '../viewmodel/home_viewmodel.dart';
 
 const Color kPrimaryColor = Color(0xFF165DFF);
@@ -42,15 +43,11 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     
     _serverStatusController = StreamController<ServerStatus>.broadcast();
     _clientStatusController = StreamController<ClientConnectionStatus>.broadcast();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(gHomeViewModelProvider.notifier).onViewInit();
-    });
+
   }
 
   @override
   void dispose() {
-    ref.read(gHomeViewModelProvider.notifier).onViewDispose();
     _tabController.dispose();
     _serverStatusController?.close();
     _clientStatusController?.close();
@@ -58,18 +55,12 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     super.dispose();
   }
 
+  late final serverStatus = ref.watch(serverStatusViewModelProvider);
+
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(gHomeViewModelProvider);
-    final wsServer = ref.watch(gWsServerProvider);
-    final notifier = ref.read(gHomeViewModelProvider.notifier);
-    
-    wsServer.onStatusChanged = (status) {
-      _serverStatusController?.add(status);
-    };
-    wsServer.onClientStatusChanged = (status) {
-      _clientStatusController?.add(status);
-    };
+    final state = ref.watch(homeViewModelProvider);
+    final notifier = ref.read(homeViewModelProvider.notifier);
 
     if (state.currentJsonText.isNotEmpty && _editorController.text != state.currentJsonText) {
       _editorController.text = state.currentJsonText;
@@ -105,31 +96,23 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                StreamBuilder<ServerStatus>(
-                  stream: _serverStatusController?.stream,
-                  initialData: wsServer.status,
-                  builder: (context, snapshot) {
-                    final status = snapshot.data ?? ServerStatus.stopped;
-                    return _buildStatusIndicator(
-                      _getServerStatusText(status),
-                      _getServerStatusIcon(status),
-                      _getServerStatusColor(status),
-                    );
-                  },
-                ),
+                () {
+                  final status = ref.watch(serverStatusViewModelProvider);
+                  return _buildStatusIndicator(
+                    _getServerStatusText(status.serverStatus),
+                    _getServerStatusIcon(status.serverStatus),
+                    _getServerStatusColor(status.serverStatus),
+                  );
+                }(),
                 const SizedBox(width: 8),
-                StreamBuilder<ClientConnectionStatus>(
-                  stream: _clientStatusController?.stream,
-                  initialData: wsServer.clientStatus,
-                  builder: (context, snapshot) {
-                    final status = snapshot.data ?? ClientConnectionStatus.disconnected;
-                    return _buildStatusIndicator(
-                      _getClientStatusText(status),
-                      _getClientStatusIcon(status),
-                      _getClientStatusColor(status),
-                    );
-                  },
-                ),
+                () {
+                  final status = ref.watch(serverStatusViewModelProvider).clientConnectionStatus;
+                  return _buildStatusIndicator(
+                    _getClientStatusText(status),
+                    _getClientStatusIcon(status),
+                    _getClientStatusColor(status),
+                  );
+                }(),
               ],
             ),
           ),
@@ -535,7 +518,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
             );
           },
           onChanged: (value) {
-            ref.read(gHomeViewModelProvider.notifier).updateJsonText(_editorController.text);
+            ref.read(homeViewModelProvider.notifier).updateJsonText(_editorController.text);
           },
         ),
       ),

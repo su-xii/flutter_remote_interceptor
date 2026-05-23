@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/providers.dart';
+import 'package:remote_interceptor/providers/providers.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/widgets/request_detail_dialog.dart';
 
