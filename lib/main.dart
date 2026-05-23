@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/page/device_discovery_page.dart';
-import 'package:remote_interceptor/page/test_page.dart';
 import 'package:remote_interceptor/application.dart';
 
 void main() {

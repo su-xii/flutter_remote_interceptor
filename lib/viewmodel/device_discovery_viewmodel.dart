@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/server/remote_server.dart';
 import 'package:remote_interceptor/state/device_discovery_state.dart';
@@ -59,6 +58,7 @@ class DeviceDiscoveryViewModel extends Notifier<DeviceDiscoveryState> {
         latestUpdate['message'] as String,
       );
     } catch (e) {
+      // ignore: avoid_print
       print('Error processing update: $e');
     }
 

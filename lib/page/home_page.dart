@@ -7,7 +7,6 @@ import 'package:re_highlight/styles/atom-one-light.dart';
 import '../providers.dart';
 import '../widgets/request_list_page.dart';
 import '../widgets/server_status_indicator.dart';
-import '../server/remote_server.dart';
 import '../state/home_state.dart';
 import '../state/server_state.dart';
 import 'device_discovery_page.dart';
@@ -229,8 +228,8 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: state.isIntercepting 
-                        ? Colors.orange.withOpacity(0.1) 
-                        : Colors.grey.withOpacity(0.1),
+                        ? Colors.orange.withValues(alpha: 0.1) 
+                        : Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: state.isIntercepting ? Colors.orange : Colors.grey,
@@ -261,7 +260,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                         onChanged: (value) {
                           notifier.toggleIntercepting(value);
                         },
-                        activeColor: Colors.orange,
+                        // activeThumbColor: Colors.orange,
                       ),
                     ],
                   ),
@@ -269,7 +268,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: state.requestQueue.length > 0 ? () {
+                onPressed: state.requestQueue.isNotEmpty ? () {
                   try {
                     notifier.handleSave();
                   } catch (e) {
@@ -355,7 +354,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: _getStatusColor(state.currentStatus).withOpacity(0.1),
+              color: _getStatusColor(state.currentStatus).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _getStatusColor(state.currentStatus),

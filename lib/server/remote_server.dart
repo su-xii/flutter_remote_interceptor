@@ -1,5 +1,5 @@
 import 'package:dio_remote_interceptor/dio_remote_interceptor.dart';
-import 'package:remote_interceptor/state/server_state.dart';
+import '../state/server_state.dart';
 
 class RemoteServer {
   RemoteServer();
