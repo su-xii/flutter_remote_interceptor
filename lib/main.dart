@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/page/device_discovery_page.dart';
 import 'package:remote_interceptor/application.dart';
+import 'package:remote_interceptor/router/router_util.dart';
+import 'package:remote_interceptor/providers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  initProviders();
 
   runApp(
     ProviderScope(
@@ -20,9 +22,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: DeviceDiscoveryPage(),
+    return MaterialApp.router(
+      title: 'Remote Interceptor',
       debugShowCheckedModeBanner: false,
+      routerConfig: RouterUtil.router,
     );
   }
 }

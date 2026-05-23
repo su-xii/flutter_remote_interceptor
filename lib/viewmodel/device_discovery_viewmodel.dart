@@ -1,29 +1,54 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/server/remote_server.dart';
 import 'package:remote_interceptor/state/device_discovery_state.dart';
 import 'package:remote_interceptor/model/device.dart';
+import 'package:remote_interceptor/router/router_util.dart';
+
+import '../providers.dart';
+import '../state/server_state.dart';
 
 class DeviceDiscoveryViewModel extends Notifier<DeviceDiscoveryState> {
   Timer? _debounceTimer;
   final List<Map<String, dynamic>> _pendingUpdates = [];
   bool _isProcessing = false;
+  Function()? onConnectionSuccess;
+  bool _initialized = false;
 
   @override
   DeviceDiscoveryState build() {
+    final wsServer = ref.read(gWsServerProvider);
+    wsServer.onClientStatusChanged = (status) {
+      if (status == ClientConnectionStatus.connected && state.isConnecting) {
+        state = state.copyWith(isConnecting: false);
+        onConnectionSuccess?.call();
+      }
+    };
+    
     return DeviceDiscoveryState.initial();
   }
 
-  Future<void> startScanning(RemoteServer server) async {
+  void onViewInit() {
+    if (_initialized) return;
+    _initialized = true;
+    startScanning();
+  }
+
+  void onViewDispose() {
+    cleanup();
+  }
+
+  Future<void> startScanning() async {
     if (state.isScanning) return;
 
     state = state.copyWith(isScanning: true);
 
-    server.onDeviceFound = (String serverIp, int serverPort, String message) {
+    final discovery = ref.read(gDeviceDiscoveryProvider);
+    discovery.onDeviceFound = (String serverIp, int serverPort, String message) {
       _queueUpdate(serverIp, serverPort, message);
     };
 
-    await server.startDeviceDiscovery();
+    await discovery.start();
   }
 
   void _queueUpdate(String serverIp, int serverPort, String message) {
@@ -58,8 +83,7 @@ class DeviceDiscoveryViewModel extends Notifier<DeviceDiscoveryState> {
         latestUpdate['message'] as String,
       );
     } catch (e) {
-      // ignore: avoid_print
-      print('Error processing update: $e');
+      debugPrint('Error processing update: $e');
     }
 
     _isProcessing = false;
@@ -92,24 +116,33 @@ class DeviceDiscoveryViewModel extends Notifier<DeviceDiscoveryState> {
     state = state.copyWith(devices: newDevices);
   }
 
-  void stopScanning(RemoteServer server) {
+  void stopScanning() {
     _debounceTimer?.cancel();
     _pendingUpdates.clear();
     _isProcessing = false;
     state = state.copyWith(isScanning: false);
 
-    if (server.onDeviceFound != null) {
-      server.onDeviceFound = null;
-    }
-
-    server.stopDeviceDiscovery();
+    final discovery = ref.read(gDeviceDiscoveryProvider);
+    discovery.stop();
   }
 
-  void connectToDevice(Device device, RemoteServer server) {
-    server.connectToDevice(device.serverIp, device.port);
+  void connectToDevice(Device device) {
+    state = state.copyWith(isConnecting: true);
+    
+    final discovery = ref.read(gDeviceDiscoveryProvider);
+    discovery.sendConnectionRequest(device.serverIp, device.port);
+  }
+
+  void navigateToHome() {
+    cleanup();
+    RouterUtil.goToHome();
   }
 
   void clearDevices() {
     state = state.copyWith(devices: {});
+  }
+
+  void cleanup() {
+    stopScanning();
   }
 }

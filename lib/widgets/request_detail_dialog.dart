@@ -186,7 +186,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
       final modifiedData = json.decode(_controller.text) as Map<String, dynamic>;
 
       // 调用 ViewModel 放行
-      final notifier = ref.read(homeViewModelProvider.notifier);
+      final notifier = ref.read(gHomeViewModelProvider.notifier);
       notifier.releaseRequestById(widget.record.id, modifiedData);
 
       // 关闭弹窗

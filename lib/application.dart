@@ -12,21 +12,20 @@ class Application extends ConsumerStatefulWidget {
 }
 
 class _ApplicationState extends ConsumerState<Application> with WidgetsBindingObserver {
-  bool _isServerStarted = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startServer();
+      _startWsServer();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _stopServer();
+    _stopWsServer();
     super.dispose();
   }
 
@@ -34,7 +33,7 @@ class _ApplicationState extends ConsumerState<Application> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.detached:
-        _stopServer();
+        _stopWsServer();
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.resumed:
@@ -44,29 +43,23 @@ class _ApplicationState extends ConsumerState<Application> with WidgetsBindingOb
     }
   }
 
-  Future<void> _startServer() async {
-    if (_isServerStarted) return;
-
+  Future<void> _startWsServer() async {
     try {
-      final server = ref.read(remoteServerProvider);
-      await server.start();
-      _isServerStarted = true;
-      debugPrint('RemoteServer 已启动');
+      final wsServer = ref.read(wsServerProvider);
+      await wsServer.start();
+      debugPrint('WS Server 已启动');
     } catch (e) {
-      debugPrint('启动 RemoteServer 失败: $e');
+      debugPrint('启动 WS Server 失败: $e');
     }
   }
 
-  Future<void> _stopServer() async {
-    if (!_isServerStarted) return;
-
+  Future<void> _stopWsServer() async {
     try {
-      final server = ref.read(remoteServerProvider);
-      await server.stop();
-      _isServerStarted = false;
-      debugPrint('RemoteServer 已停止');
+      final wsServer = ref.read(wsServerProvider);
+      await wsServer.stop();
+      debugPrint('WS Server 已停止');
     } catch (e) {
-      debugPrint('停止 RemoteServer 失败: $e');
+      debugPrint('停止 WS Server 失败: $e');
     }
   }
 

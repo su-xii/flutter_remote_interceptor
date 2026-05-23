@@ -53,7 +53,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(homeViewModelProvider);
+    final state = ref.watch(gHomeViewModelProvider);
     final records = state.requestRecords;
 
     // 当有新记录时，自动滚动到底部

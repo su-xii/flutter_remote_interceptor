@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../model/device.dart';
 import '../state/device_discovery_state.dart';
-import 'home_page.dart';
+import '../viewmodel/device_discovery_viewmodel.dart';
 
 class DeviceDiscoveryPage extends ConsumerStatefulWidget {
   const DeviceDiscoveryPage({super.key});
@@ -17,22 +17,21 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final server = ref.read(remoteServerProvider);
-      await ref.read(deviceDiscoveryViewModelProvider.notifier).startScanning(server);
+      ref.read(gDeviceDiscoveryViewModelProvider.notifier).onViewInit();
     });
   }
 
   @override
   void dispose() {
-    final server = ref.read(remoteServerProvider);
-    ref.read(deviceDiscoveryViewModelProvider.notifier).stopScanning(server);
+    ref.read(gDeviceDiscoveryViewModelProvider.notifier).onViewDispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(deviceDiscoveryViewModelProvider);
+    final state = ref.watch(gDeviceDiscoveryViewModelProvider);
     final devices = state.onlineDevices;
+    final notifier = ref.read(gDeviceDiscoveryViewModelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,11 +42,9 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              final server = ref.read(remoteServerProvider);
-              final notifier = ref.read(deviceDiscoveryViewModelProvider.notifier);
-              notifier.stopScanning(server);
+              notifier.stopScanning();
               notifier.clearDevices();
-              notifier.startScanning(server);
+              notifier.startScanning();
             },
           ),
         ],
@@ -88,19 +85,6 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                     ],
                   ),
                 ),
-                Switch(
-                  value: state.isScanning,
-                  onChanged: (value) {
-                    final server = ref.read(remoteServerProvider);
-                    final notifier = ref.read(deviceDiscoveryViewModelProvider.notifier);
-                    if (value) {
-                      notifier.startScanning(server);
-                    } else {
-                      notifier.stopScanning(server);
-                    }
-                  },
-                  // activeThumbColor: Colors.green,
-                ),
               ],
             ),
           ),
@@ -128,7 +112,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                         Text(
                           state.isScanning 
                               ? '请确保手机和电脑在同一网络' 
-                              : '点击左上角开关开始扫描',
+                              : '等待扫描设备...',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[500],
@@ -142,7 +126,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                     itemCount: devices.length,
                     itemBuilder: (context, index) {
                       final device = devices[index];
-                      return _buildDeviceCard(context, state, device);
+                      return _buildDeviceCard(context, state, device, notifier);
                     },
                   ),
           ),
@@ -151,7 +135,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     );
   }
 
-  Widget _buildDeviceCard(BuildContext context, DeviceDiscoveryState state, Device device) {
+  Widget _buildDeviceCard(BuildContext context, DeviceDiscoveryState state, Device device, DeviceDiscoveryViewModel notifier) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -159,53 +143,52 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
-        onTap: () async {
-          final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('连接设备'),
-              content: Text('是否连接到设备:\n${device.info}\n(${device.serverIp}:${device.port})'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('取消'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+        onTap: state.isConnecting
+            ? null
+            : () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('连接设备'),
+                    content: Text('是否连接到设备:\n${device.info}\n(${device.serverIp}:${device.port})'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('取消'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('连接'),
+                      ),
+                    ],
                   ),
-                  child: const Text('连接'),
-                ),
-              ],
-            ),
-          );
-
-          if (confirmed == true) {
-            final server = ref.read(remoteServerProvider);
-            ref.read(deviceDiscoveryViewModelProvider.notifier).connectToDevice(device, server);
-            
-            await Future.delayed(const Duration(milliseconds: 500));
-            
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('已连接到 ${device.info}'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              
-              await Future.delayed(const Duration(milliseconds: 800));
-              if (mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
                 );
-              }
-            }
-          }
-        },
+
+                if (confirmed == true) {
+                  notifier.connectToDevice(device);
+                  
+                  notifier.onConnectionSuccess = () {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('已连接到 ${device.info}'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      
+                      Future.delayed(const Duration(milliseconds: 800), () {
+                        if (mounted) {
+                          notifier.navigateToHome();
+                        }
+                      });
+                    }
+                  };
+                }
+              },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),

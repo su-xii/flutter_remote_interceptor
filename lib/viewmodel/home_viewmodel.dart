@@ -1,17 +1,34 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/server/remote_server.dart';
+import 'package:remote_interceptor/server/ws_server.dart';
 import 'package:remote_interceptor/state/home_state.dart';
 import 'package:remote_interceptor/model/request_record.dart';
+import 'package:remote_interceptor/router/router_util.dart';
+
+import '../providers.dart';
 
 class HomeViewModel extends Notifier<HomeState> {
+  bool _initialized = false;
+
   @override
   HomeState build() {
     return HomeState.initial();
   }
 
-  void setRequestHandler(RemoteServer server) {
+  void onViewInit() {
+    if (_initialized) return;
+    _initialized = true;
+    
+    final wsServer = ref.read(gWsServerProvider);
+    setRequestHandler(wsServer);
+  }
+
+  void onViewDispose() {
+    disconnectClient();
+  }
+
+  void setRequestHandler(WsServer server) {
     server.requestHandler = _handleRequest;
   }
 
@@ -106,6 +123,15 @@ class HomeViewModel extends Notifier<HomeState> {
 
   void toggleIntercepting(bool value) {
     state = state.copyWith(isIntercepting: value);
+  }
+
+  void disconnectClient() {
+    final wsServer = ref.read(gWsServerProvider);
+    wsServer.disconnectClient();
+  }
+
+  void navigateToDeviceDiscovery() {
+    RouterUtil.goToDeviceDiscovery();
   }
 
   void updateJsonText(String text) {

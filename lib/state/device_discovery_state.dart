@@ -3,11 +3,13 @@ import '../model/device.dart';
 /// 设备发现状态
 class DeviceDiscoveryState {
   final bool isScanning;
+  final bool isConnecting;
   final Map<String, Device> devices;
   final String? errorMessage;
 
   DeviceDiscoveryState({
     required this.isScanning,
+    required this.isConnecting,
     required this.devices,
     this.errorMessage,
   });
@@ -16,6 +18,7 @@ class DeviceDiscoveryState {
   factory DeviceDiscoveryState.initial() {
     return DeviceDiscoveryState(
       isScanning: false,
+      isConnecting: false,
       devices: {},
     );
   }
@@ -28,11 +31,13 @@ class DeviceDiscoveryState {
   /// 创建副本
   DeviceDiscoveryState copyWith({
     bool? isScanning,
+    bool? isConnecting,
     Map<String, Device>? devices,
     String? errorMessage,
   }) {
     return DeviceDiscoveryState(
       isScanning: isScanning ?? this.isScanning,
+      isConnecting: isConnecting ?? this.isConnecting,
       devices: devices ?? this.devices,
       errorMessage: errorMessage ?? this.errorMessage,
     );

@@ -9,7 +9,7 @@ import '../widgets/request_list_page.dart';
 import '../widgets/server_status_indicator.dart';
 import '../state/home_state.dart';
 import '../state/server_state.dart';
-import 'device_discovery_page.dart';
+import '../viewmodel/home_viewmodel.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -33,12 +33,14 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     _serverStatusController = StreamController<ServerStatus>.broadcast();
     _clientStatusController = StreamController<ClientConnectionStatus>.broadcast();
     
-    final server = ref.read(remoteServerProvider);
-    ref.read(homeViewModelProvider.notifier).setRequestHandler(server);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(gHomeViewModelProvider.notifier).onViewInit();
+    });
   }
 
   @override
   void dispose() {
+    ref.read(gHomeViewModelProvider.notifier).onViewDispose();
     _tabController.dispose();
     _serverStatusController?.close();
     _clientStatusController?.close();
@@ -48,13 +50,14 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(homeViewModelProvider);
-    final server = ref.watch(remoteServerProvider);
+    final state = ref.watch(gHomeViewModelProvider);
+    final wsServer = ref.watch(gWsServerProvider);
+    final notifier = ref.read(gHomeViewModelProvider.notifier);
     
-    server.onStatusChanged = (status) {
+    wsServer.onStatusChanged = (status) {
       _serverStatusController?.add(status);
     };
-    server.onClientStatusChanged = (status) {
+    wsServer.onClientStatusChanged = (status) {
       _clientStatusController?.add(status);
     };
 
@@ -91,10 +94,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const DeviceDiscoveryPage()),
-                        );
+                        notifier.navigateToDeviceDiscovery();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -115,7 +115,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
               children: [
                 StreamBuilder<ServerStatus>(
                   stream: _serverStatusController?.stream,
-                  initialData: server.status,
+                  initialData: wsServer.status,
                   builder: (context, snapshot) {
                     final status = snapshot.data ?? ServerStatus.stopped;
                     return StatusIndicator(
@@ -128,7 +128,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                 const SizedBox(width: 6),
                 StreamBuilder<ClientConnectionStatus>(
                   stream: _clientStatusController?.stream,
-                  initialData: server.clientStatus,
+                  initialData: wsServer.clientStatus,
                   builder: (context, snapshot) {
                     final status = snapshot.data ?? ClientConnectionStatus.disconnected;
                     return StatusIndicator(
@@ -146,7 +146,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildEditorTab(state),
+          _buildEditorTab(state, notifier),
           const RequestListPage(),
         ],
       ),
@@ -213,9 +213,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     }
   }
 
-  Widget _buildEditorTab(HomeState state) {
-    final notifier = ref.read(homeViewModelProvider.notifier);
-    
+  Widget _buildEditorTab(HomeState state, HomeViewModel notifier) {
     return Column(
       children: [
         Container(
@@ -227,8 +225,8 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: state.isIntercepting 
-                        ? Colors.orange.withValues(alpha: 0.1) 
+                    color: state.isIntercepting
+                        ? Colors.orange.withValues(alpha: 0.1)
                         : Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -239,8 +237,8 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                   child: Row(
                     children: [
                       Icon(
-                        state.isIntercepting 
-                            ? Icons.shield_outlined 
+                        state.isIntercepting
+                            ? Icons.shield_outlined
                             : Icons.shield_outlined,
                         color: state.isIntercepting ? Colors.orange : Colors.grey,
                         size: 20,
@@ -260,7 +258,6 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                         onChanged: (value) {
                           notifier.toggleIntercepting(value);
                         },
-                        // activeThumbColor: Colors.orange,
                       ),
                     ],
                   ),
@@ -268,18 +265,20 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: state.requestQueue.isNotEmpty ? () {
-                  try {
-                    notifier.handleSave();
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('JSON 格式错误，请检查！错误信息: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                } : null,
+                onPressed: state.requestQueue.isNotEmpty
+                    ? () {
+                        try {
+                          notifier.handleSave();
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('JSON 格式错误，请检查！错误信息: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    : null,
                 icon: const Icon(Icons.send, size: 18),
                 label: const Text('放行'),
                 style: ElevatedButton.styleFrom(
@@ -344,7 +343,7 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                 );
               },
               onChanged: (value) {
-                notifier.updateJsonText(_editorController.text);
+                ref.read(gHomeViewModelProvider.notifier).updateJsonText(_editorController.text);
               },
             ),
           ),
