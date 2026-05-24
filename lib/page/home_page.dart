@@ -32,25 +32,17 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final CodeLineEditingController _editorController = CodeLineEditingController();
-  
-  StreamController<ServerStatus>? _serverStatusController;
-  StreamController<ClientConnectionStatus>? _clientStatusController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
-    _serverStatusController = StreamController<ServerStatus>.broadcast();
-    _clientStatusController = StreamController<ClientConnectionStatus>.broadcast();
 
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _serverStatusController?.close();
-    _clientStatusController?.close();
     _editorController.dispose();
     super.dispose();
   }
