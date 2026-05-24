@@ -601,7 +601,9 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                       }
                     }
                   : null,
-              icon: const Icon(Icons.send, size: 20,color: Colors.white),
+              icon: Icon(Icons.send,
+                  size: 20,
+                  color: state.requestQueue.isNotEmpty ? Colors.white : null),
               label: const Text('放行'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kSuccessColor,
