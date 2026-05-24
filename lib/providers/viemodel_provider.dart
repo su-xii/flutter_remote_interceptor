@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:remote_interceptor/providers/data_provider.dart';
 import 'package:remote_interceptor/providers/providers.dart';
 
 import '../state/device_discovery_state.dart';
@@ -22,6 +23,7 @@ final homeViewModelProvider = StateNotifierProvider.autoDispose<HomeViewModel, H
 final deviceDiscoveryViewModelProvider = StateNotifierProvider.autoDispose<DeviceDiscoveryViewModel, DeviceDiscoveryState>((ref) {
     return DeviceDiscoveryViewModel(
         ref.read(deviceDiscoveryServerProvider),
-        ref.read(remoteServerProvider)
+        ref.read(remoteServerProvider),
+        ref.read(deviceDiscoveryHistory)
     );
 });
