@@ -35,17 +35,17 @@ class DeviceDiscoveryViewModel extends StateNotifier<DeviceDiscoveryState> {
 
   // 加载历史记录
   void _loadHistory() async {
-    final deviceIps = await _deviceDiscoveryHistoryStore.load();
-    print("hhh $deviceIps");
-    _manualDevices.addEntries(deviceIps.map((serverIp) => MapEntry(
-        serverIp, DeviceModel(serverIp: serverIp, port: 0, info: ""))));
+    final devices = await _deviceDiscoveryHistoryStore.load();
+    print("hhh $devices");
+    _manualDevices.addEntries(devices.map((device)=>MapEntry(device.serverIp, device)));
+    _deviceDiscoveryServer.manualDevices = _manualDevices;
   }
 
   // 处理连接成功的设备
   void _handleConnectedDevice() {
-    final deviceIps = state.devices.keys
-        .where((serverIp) => _manualDevices.keys.contains(serverIp)).toList();
-    _deviceDiscoveryHistoryStore.save(deviceIps);
+    final devices = state.devices.values
+        .where((device) => _manualDevices.keys.contains(device.serverIp)).toList();
+    _deviceDiscoveryHistoryStore.save(devices);
   }
 
   // 客户端连接成功

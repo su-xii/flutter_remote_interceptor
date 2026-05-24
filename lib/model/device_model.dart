@@ -30,6 +30,22 @@ class DeviceModel {
   @override
   int get hashCode => serverIp.hashCode;
 
+  factory DeviceModel.fromJson(Map<String, dynamic> json) {
+    return DeviceModel(
+      serverIp: json['serverIp'],
+      port: json['port'],
+      info: json['info'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'serverIp': serverIp,
+      'port': port,
+      'info': info,
+    };
+  }
+
   DeviceModel copyWith({
     String? serverIp,
     int? port,
