@@ -16,6 +16,13 @@ class HomeViewModel extends StateNotifier<HomeState> {
   }
 
 
+  @override
+  void dispose() {
+    _remoteServer.requestHandler = null;
+    _remoteServer.disconnectClient();
+    super.dispose();
+  }
+
   Future<Map<String, dynamic>> _handleRequest(Map<String, dynamic> requestData) async {
     state = state.copyWith(
       recordCounter: state.recordCounter + 1,

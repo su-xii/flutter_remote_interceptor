@@ -25,8 +25,8 @@ class ServerStatusState{
 
   factory ServerStatusState.initial() {
     return ServerStatusState(
-      clientConnectionStatus: ClientConnectionStatus.disconnected,
-      serverStatus: ServerStatus.stopped,
+      clientConnectionStatus: ClientConnectionStatus.connected,
+      serverStatus: ServerStatus.running,
     );
   }
 

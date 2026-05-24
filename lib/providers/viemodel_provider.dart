@@ -13,13 +13,13 @@ final serverStatusViewModelProvider =
   (ref) => ServerStatusViewModel(ref.read(remoteServerProvider)),
 );
 
-final homeViewModelProvider = StateNotifierProvider<HomeViewModel, HomeState>((ref) {
+final homeViewModelProvider = StateNotifierProvider.autoDispose<HomeViewModel, HomeState>((ref) {
     return HomeViewModel(
         ref.read(remoteServerProvider)
     );
 });
 
-final deviceDiscoveryViewModelProvider = StateNotifierProvider<DeviceDiscoveryViewModel, DeviceDiscoveryState>((ref) {
+final deviceDiscoveryViewModelProvider = StateNotifierProvider.autoDispose<DeviceDiscoveryViewModel, DeviceDiscoveryState>((ref) {
     return DeviceDiscoveryViewModel(
         ref.read(deviceDiscoveryServerProvider),
         ref.read(remoteServerProvider)
