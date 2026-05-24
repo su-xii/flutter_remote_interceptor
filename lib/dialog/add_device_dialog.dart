@@ -273,7 +273,7 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _handleAdd,
-                      icon: const Icon(Icons.add, size: 18),
+                      icon: const Icon(Icons.add, size: 18,color: Colors.white,),
                       label: const Text('添加设备'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kPrimaryColor,
