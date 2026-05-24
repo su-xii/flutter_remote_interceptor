@@ -293,7 +293,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: _handleRelease,
-                      icon: const Icon(Icons.send, size: 18),
+                      icon: const Icon(Icons.send, size: 18,color: Colors.white),
                       label: const Text('放行'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kSuccessColor,

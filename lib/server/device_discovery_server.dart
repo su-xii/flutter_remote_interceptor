@@ -18,6 +18,7 @@ class DeviceDiscoveryServer {
   }
 
   void stop() {
+    _discoveryClient.manualDevices = null;
     _discoveryClient.stop();
   }
 
