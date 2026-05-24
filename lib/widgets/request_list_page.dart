@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/providers/providers.dart';
 import 'package:remote_interceptor/model/request_record.dart';
+import 'package:remote_interceptor/providers/viemodel_provider.dart';
 import 'package:remote_interceptor/widgets/request_detail_dialog.dart';
 
 const Color kPrimaryColor = Color(0xFF165DFF);
@@ -136,8 +137,9 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
   @override
   Widget build(BuildContext context) {
     // 临时使用模拟数据渲染
-    final records = _mockRecords;
-    
+    final records = ref.watch(homeViewModelProvider).requestRecords;
+    // final records = _mockRecords;
+
     // 当有新记录时，自动滚动到底部
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (records.isNotEmpty) {

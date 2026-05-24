@@ -8,7 +8,10 @@ import '../state/server_status_state.dart';
 class ServerStatusViewModel extends StateNotifier<ServerStatusState> {
   final RemoteServer _remoteServer;
   late final StreamSubscription<void> _clientConnectSubscription;
-  ServerStatusViewModel(this._remoteServer) : super(ServerStatusState.initial()){
+  ServerStatusViewModel(this._remoteServer) : super(ServerStatusState(
+    serverStatus: _remoteServer.serverStatus,
+    clientConnectionStatus: _remoteServer.clientConnectionStatus
+  )){
     _clientConnectSubscription = _remoteServer.onClientConnect.listen((_)=>_updateClientStatus(ClientConnectionStatus.connected));
     _remoteServer.onClientDisconnect = () => _updateClientStatus(ClientConnectionStatus.disconnected);
     _remoteServer.onServerRunning = () => _updateServerStatus(ServerStatus.running);

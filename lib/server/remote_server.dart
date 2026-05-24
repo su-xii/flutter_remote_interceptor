@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio_remote_interceptor/dio_remote_interceptor.dart';
+import 'package:remote_interceptor/state/server_status_state.dart';
 
 class RemoteServer {
   // 远程响应服务
@@ -13,7 +14,10 @@ class RemoteServer {
       }
       return data;
     };
-    _server.onClientConnect = ()=> _clientConnectController.add(());
+    _server.onClientConnect = (){
+      _clientConnectionStatus = ClientConnectionStatus.connected;
+      _clientConnectController.add(());
+    };
     _server.onClientDisconnect = ()=> onClientDisconnect?.call();
   }
 
@@ -23,14 +27,20 @@ class RemoteServer {
   void Function()? onServerRunning;// 服务器启动成功回调
   void Function()? onServerStop;// 服务器停止回调
 
+  ClientConnectionStatus _clientConnectionStatus = ClientConnectionStatus.disconnected;
+  ServerStatus _serverStatus = ServerStatus.stopped;
+  ClientConnectionStatus get clientConnectionStatus => _clientConnectionStatus;
+  ServerStatus get serverStatus => _serverStatus;
+
   // 目前只有客户端连接成功需要多个地方回调
-  final _clientConnectController = StreamController<void>.broadcast();
+  final _clientConnectController = StreamController<()>.broadcast();
   // 对外提供订阅
-  Stream<void> get onClientConnect => _clientConnectController.stream;
+  Stream<()> get onClientConnect => _clientConnectController.stream;
 
 
   Future<void> start() async {
     await _server.start();
+    _serverStatus = ServerStatus.running;
     onServerRunning?.call();
   }
 
@@ -38,6 +48,7 @@ class RemoteServer {
 
   Future<void> stop() async {
     await _server.stop();
+    _clientConnectionStatus = ClientConnectionStatus.disconnected;
     onServerStop?.call();
   }
 }
