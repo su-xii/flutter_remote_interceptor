@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/providers/providers.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
-import 'package:remote_interceptor/widgets/request_detail_dialog.dart';
+import 'package:remote_interceptor/dialog/request_detail_dialog.dart';
 
 const Color kPrimaryColor = Color(0xFF165DFF);
 const Color kSuccessColor = Color(0xFF00B42A);
@@ -61,84 +61,10 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
     }
   }
 
-  // 临时模拟数据
-  List<RequestRecord> get _mockRecords {
-    final now = DateTime.now();
-    return [
-      RequestRecord(
-        id: '1',
-        requestId: 'req_001',
-        originalData: {'data': 'test1'},
-        timestamp: now.subtract(const Duration(minutes: 5, seconds: 30)),
-        url: 'http://www.52im.net/portal/api/v1/posts',
-        method: HttpMethod.GET,
-        statusCode: 200,
-        contentType: 'HTML',
-        duration: 156,
-      ),
-      RequestRecord(
-        id: '2',
-        requestId: 'req_002',
-        originalData: {'data': 'test2'},
-        timestamp: now.subtract(const Duration(minutes: 5, seconds: 20)),
-        url: 'https://clientservices.googleapis.com/v2/messaging',
-        method: HttpMethod.POST,
-        statusCode: 200,
-        contentType: 'TEXT',
-        duration: 148,
-      ),
-      RequestRecord(
-        id: '3',
-        requestId: 'req_003',
-        originalData: {'data': 'test3'},
-        timestamp: now.subtract(const Duration(minutes: 5, seconds: 10)),
-        url: 'http://www.52im.net/portal/api/v1/users',
-        method: HttpMethod.GET,
-        statusCode: 200,
-        contentType: 'HTML',
-        duration: 231,
-      ),
-      RequestRecord(
-        id: '4',
-        requestId: 'req_004',
-        originalData: {'data': 'test4'},
-        timestamp: now.subtract(const Duration(minutes: 4, seconds: 50)),
-        url: 'https://clientservices.googleapis.com/v2/connect',
-        method: HttpMethod.POST,
-        statusCode: 200,
-        contentType: 'TEXT',
-        duration: 160,
-      ),
-      RequestRecord(
-        id: '5',
-        requestId: 'req_005',
-        originalData: {'data': 'test5'},
-        timestamp: now.subtract(const Duration(minutes: 4, seconds: 30)),
-        url: 'https://api.example.com/v3/data',
-        method: HttpMethod.PUT,
-        statusCode: 404,
-        contentType: 'JSON',
-        duration: 450,
-      ),
-      RequestRecord(
-        id: '6',
-        requestId: 'req_006',
-        originalData: {'data': 'test6'},
-        timestamp: now.subtract(const Duration(minutes: 4, seconds: 10)),
-        url: 'https://api.example.com/v3/files',
-        method: HttpMethod.DELETE,
-        statusCode: 204,
-        contentType: 'JSON',
-        duration: 89,
-      ),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     // 临时使用模拟数据渲染
     final records = ref.watch(responseEditViewModelProvider).requestRecords;
-    // final records = _mockRecords;
 
     // 当有新记录时，自动滚动到底部
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -338,22 +264,50 @@ class _RequestRecordItem extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // HTTP 方法标签
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: methodColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _getMethodLabel(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: methodColor,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 6,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // HTTP 方法标签
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: methodColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _getMethodLabel(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: methodColor,
+                        ),
+                      ),
                     ),
-                  ),
+                    // 拦截状态
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: methodColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        switch(record.state){
+                          InterceptState.notIntercepted => "未拦截",
+                          InterceptState.interceptedPending => "拦截中",
+                          InterceptState.interceptedProcessed => "已处理",
+                        },
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: methodColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 12),
                 // 中间内容区域

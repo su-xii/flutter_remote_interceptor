@@ -389,19 +389,6 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
 
       // 关闭弹窗
       Navigator.of(context).pop();
-
-      // 显示成功提示
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('请求已放行'),
-          backgroundColor: kSuccessColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

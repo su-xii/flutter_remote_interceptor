@@ -13,7 +13,10 @@ enum HttpMethod {
   DELETE,
   PATCH,
   OPTIONS,
-  HEAD
+  HEAD;
+  static HttpMethod fromString(String value) {
+    return HttpMethod.values.firstWhere((element) => element.name.toLowerCase() == value.toLowerCase());
+  }
 }
 
 /// 请求记录模型
@@ -38,14 +41,14 @@ class RequestRecord {
     required this.requestId,
     required this.originalData,
     required this.timestamp,
-    this.url = 'https://example.com/api',
-    this.method = HttpMethod.GET,
-    this.statusCode = 200,
+    required this.url,
+    required String method,
+    required this.statusCode,
     this.contentType = 'JSON',
     this.duration = 100,
     this.state = InterceptState.notIntercepted,
     this.modifiedData,
-  });
+  }): method = HttpMethod.fromString(method);
   
   /// 获取显示用的 JSON 数据
   Map<String, dynamic> get displayData {
@@ -59,7 +62,7 @@ class RequestRecord {
     Map<String, dynamic>? originalData,
     DateTime? timestamp,
     String? url,
-    HttpMethod? method,
+    String? method,
     int? statusCode,
     String? contentType,
     int? duration,
@@ -72,7 +75,7 @@ class RequestRecord {
       originalData: originalData ?? this.originalData,
       timestamp: timestamp ?? this.timestamp,
       url: url ?? this.url,
-      method: method ?? this.method,
+      method: method ?? this.method.name,
       statusCode: statusCode ?? this.statusCode,
       contentType: contentType ?? this.contentType,
       duration: duration ?? this.duration,
