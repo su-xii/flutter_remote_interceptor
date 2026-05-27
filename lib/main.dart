@@ -16,6 +16,7 @@ void main() async{
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.normal,
+    title: "Dio拦截器"
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();

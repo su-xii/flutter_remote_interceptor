@@ -29,9 +29,12 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
 
     if (targetIndex != -1) {
       final target = state.mockRules[targetIndex];
-      final updatedRule = target.copyWith(hitCount: target.hitCount + 1);
-      final newRules = List<MockRule>.from(state.mockRules)
-        ..[targetIndex] = updatedRule;
+      final newRules = state.mockRules.map((rule) {
+        if (rule.id == target.id) {
+          return rule.copyWith(hitCount: rule.hitCount + 1);
+        }
+        return rule;
+      }).toList();
       state = state.copyWith(mockRules: newRules);
       requestData['data'] = target.mockData;
     }
