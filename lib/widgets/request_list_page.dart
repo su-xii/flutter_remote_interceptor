@@ -139,9 +139,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
           ),
           if (recordCount > 0)
             TextButton.icon(
-              onPressed: () {
-                // TODO: 清空记录
-              },
+              onPressed: ref.read(responseEditViewModelProvider.notifier).clearList,
               icon: const Icon(Icons.delete_outline, size: 18),
               label: const Text('清空'),
               style: TextButton.styleFrom(

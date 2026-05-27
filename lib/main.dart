@@ -8,7 +8,7 @@ void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
 
-  final size = Size(800, 600);
+  final size = Size(400, 800);
   WindowOptions windowOptions = WindowOptions(
     minimumSize: size,
     size: size,

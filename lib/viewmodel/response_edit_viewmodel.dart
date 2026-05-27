@@ -147,4 +147,9 @@ class ResponseEditViewModel extends StateNotifier<ResponseEditState> {
       }
     }
   }
+
+  void clearList(){
+    state = state.copyWith(requestRecords: []);
+  }
+
 }
