@@ -1,18 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/providers/providers.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
 import 'package:remote_interceptor/dialog/request_detail_dialog.dart';
-
-const Color kPrimaryColor = Color(0xFF165DFF);
-const Color kSuccessColor = Color(0xFF00B42A);
-const Color kWarningColor = Color(0xFFFF7D00);
-const Color kErrorColor = Color(0xFFF53F3F);
-const Color kTextPrimary = Color(0xFF1D2129);
-const Color kTextSecondary = Color(0xFF86909C);
-const Color kBgCard = Color(0xFFFFFFFF);
-const Color kBgPage = Color(0xFFF2F3F5);
 
 /// 请求记录列表页面
 class RequestListPage extends ConsumerStatefulWidget {
@@ -86,11 +78,12 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
   }
 
   Widget _buildHeader(BuildContext context, int recordCount) {
+    final colors = ref.watch(themeProvider);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -108,37 +101,37 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: kPrimaryColor.withOpacity(0.1),
+                  color: colors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.list_alt,
                   size: 20,
-                  color: kPrimaryColor,
+                  color: colors.primary,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
                 '请求记录',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: kTextPrimary,
+                  color: colors.textPrimary,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: kPrimaryColor.withOpacity(0.1),
+                  color: colors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   '$recordCount',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: kPrimaryColor,
+                    color: colors.primary,
                   ),
                 ),
               ),
@@ -152,7 +145,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
               icon: const Icon(Icons.delete_outline, size: 18),
               label: const Text('清空'),
               style: TextButton.styleFrom(
-                foregroundColor: kErrorColor,
+                foregroundColor: colors.error,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
             ),
@@ -162,6 +155,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
   }
 
   Widget _buildEmptyState() {
+    final colors = ref.watch(themeProvider);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -169,7 +163,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: kBgCard,
+              color: colors.bgCard,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -182,7 +176,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
             child: Icon(
               Icons.history_toggle_off,
               size: 64,
-              color: kTextSecondary.withOpacity(0.4),
+              color: colors.textSecondary.withOpacity(0.4),
             ),
           ),
           const SizedBox(height: 24),
@@ -191,7 +185,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: kTextPrimary.withOpacity(0.6),
+              color: colors.textPrimary.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 8),
@@ -199,7 +193,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
             '拦截请求后会在这里显示记录',
             style: TextStyle(
               fontSize: 14,
-              color: kTextSecondary,
+              color: colors.textSecondary,
             ),
           ),
         ],
@@ -233,7 +227,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
 }
 
 /// 单个请求记录项
-class _RequestRecordItem extends StatelessWidget {
+class _RequestRecordItem extends ConsumerWidget {
   final RequestRecord record;
   final int index;
   final VoidCallback onTap;
@@ -245,12 +239,13 @@ class _RequestRecordItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final methodColor = _getMethodColor();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeProvider);
+    final methodColor = _getMethodColor(record.method);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
@@ -318,9 +313,9 @@ class _RequestRecordItem extends StatelessWidget {
                     // URL
                     Text(
                       _truncateUrl(record.url),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
-                        color: kTextPrimary,
+                        color: colors.textPrimary,
                         height: 1.4,
                       ),
                       maxLines: 1,
@@ -335,7 +330,7 @@ class _RequestRecordItem extends StatelessWidget {
                         _formatTime(record.timestamp),
                         style: TextStyle(
                           fontSize: 13,
-                          color: kTextSecondary.withOpacity(0.8),
+                          color: colors.textSecondary.withOpacity(0.8),
                         ),
                       ),
                       // 分隔符
@@ -344,7 +339,7 @@ class _RequestRecordItem extends StatelessWidget {
                         height: 4,
                         margin: const EdgeInsets.symmetric(horizontal: 6),
                         decoration: BoxDecoration(
-                          color: kTextSecondary.withOpacity(0.3),
+                          color: colors.textSecondary.withOpacity(0.3),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -352,7 +347,7 @@ class _RequestRecordItem extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _getStatusCodeColor().withOpacity(0.1),
+                          color: _getStatusCodeColor(colors).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Text(
@@ -360,7 +355,7 @@ class _RequestRecordItem extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: _getStatusCodeColor(),
+                            color: _getStatusCodeColor(colors),
                           ),
                         ),
                       ),
@@ -370,7 +365,7 @@ class _RequestRecordItem extends StatelessWidget {
                         record.contentType,
                         style: TextStyle(
                           fontSize: 13,
-                          color: kTextSecondary.withOpacity(0.8),
+                          color: colors.textSecondary.withOpacity(0.8),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -379,7 +374,7 @@ class _RequestRecordItem extends StatelessWidget {
                         '${record.duration}ms',
                         style: TextStyle(
                           fontSize: 13,
-                          color: kTextSecondary.withOpacity(0.8),
+                          color: colors.textSecondary.withOpacity(0.8),
                         ),
                       ),
                     ],
@@ -392,7 +387,7 @@ class _RequestRecordItem extends StatelessWidget {
             Icon(
               Icons.chevron_right,
               size: 20,
-              color: kTextSecondary.withOpacity(0.4),
+              color: colors.textSecondary.withOpacity(0.4),
             ),
           ],
         ),
@@ -400,8 +395,8 @@ class _RequestRecordItem extends StatelessWidget {
     )));
   }
 
-  Color _getMethodColor() {
-    switch (record.method) {
+  Color _getMethodColor(HttpMethod method) {
+    switch (method) {
       case HttpMethod.GET:
         return const Color(0xFF3B82F6); // 蓝色
       case HttpMethod.POST:
@@ -413,7 +408,7 @@ class _RequestRecordItem extends StatelessWidget {
       case HttpMethod.PATCH:
         return const Color(0xFF8B5CF6); // 紫色
       default:
-        return kTextSecondary;
+        return const Color(0xFF86909C); // 灰色
     }
   }
 
@@ -421,19 +416,18 @@ class _RequestRecordItem extends StatelessWidget {
     return record.method.toString().split('.').last;
   }
 
-  Color _getStatusCodeColor() {
+  Color _getStatusCodeColor(AppColors colors) {
     if (record.statusCode >= 200 && record.statusCode < 300) {
-      return kSuccessColor;
+      return colors.success;
     } else if (record.statusCode >= 300 && record.statusCode < 400) {
-      return kWarningColor;
+      return colors.warning;
     } else {
-      return kErrorColor;
+      return colors.error;
     }
   }
 
   String _truncateUrl(String url) {
     if (url.length <= 50) return url;
-    // 保留域名和部分路径
     final uri = Uri.tryParse(url);
     if (uri != null) {
       return '${uri.scheme}://${uri.host}${uri.path.length > 20 ? '...' : uri.path}';

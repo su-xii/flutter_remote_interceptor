@@ -3,21 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/json.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
 import 'package:remote_interceptor/state/response_edit_state.dart';
 import 'package:remote_interceptor/viewmodel/response_edit_viewmodel.dart';
 import '../state/server_status_state.dart';
 import '../widgets/request_list_page.dart';
-
-const Color kPrimaryColor = Color(0xFF165DFF);
-const Color kSuccessColor = Color(0xFF00B42A);
-const Color kWarningColor = Color(0xFFFF7D00);
-const Color kErrorColor = Color(0xFFF53F3F);
-const Color kTextPrimary = Color(0xFF1D2129);
-const Color kTextSecondary = Color(0xFF86909C);
-const Color kBgCard = Color(0xFFFFFFFF);
-const Color kBgPage = Color(0xFFF2F3F5);
-const Color kBorderLight = Color(0xFFE5E6EB);
 
 class ResponseEditPage extends ConsumerStatefulWidget {
   const ResponseEditPage({super.key});
@@ -78,11 +69,12 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
   }
 
   Widget _buildGlobalControlBar() {
+    final colors = ref.watch(themeProvider);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -101,11 +93,11 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: state.isIntercepting
-                    ? kWarningColor.withOpacity(0.1)
-                    : kTextSecondary.withOpacity(0.1),
+                    ? colors.warning.withOpacity(0.1)
+                    : colors.textSecondary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: state.isIntercepting ? kWarningColor : kTextSecondary.withOpacity(0.3),
+                  color: state.isIntercepting ? colors.warning : colors.textSecondary.withOpacity(0.3),
                   width: 1.5,
                 ),
               ),
@@ -113,14 +105,14 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
                 children: [
                   Icon(
                     state.isIntercepting ? Icons.shield : Icons.shield_outlined,
-                    color: state.isIntercepting ? kWarningColor : kTextSecondary,
+                    color: state.isIntercepting ? colors.warning : colors.textSecondary,
                     size: 22,
                   ),
                   const SizedBox(width: 10),
                   Text(
                     state.isIntercepting ? '拦截开启' : '拦截关闭',
                     style: TextStyle(
-                      color: state.isIntercepting ? kWarningColor : kTextSecondary,
+                      color: state.isIntercepting ? colors.warning : colors.textSecondary,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -133,8 +125,8 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
                       onChanged: (value) {
                         notifier.toggleIntercepting(value);
                       },
-                      activeColor: kWarningColor,
-                      activeTrackColor: kWarningColor.withOpacity(0.3),
+                      activeColor: colors.warning,
+                      activeTrackColor: colors.warning.withOpacity(0.3),
                     ),
                   ),
                 ],
@@ -147,10 +139,10 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 18),
             decoration: BoxDecoration(
-              color: kPrimaryColor.withOpacity(0.1),
+              color: colors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: kPrimaryColor.withOpacity(0.2),
+                color: colors.primary.withOpacity(0.2),
                 width: 1.5,
               ),
             ),
@@ -159,15 +151,15 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
                 Icon(
                   Icons.queue,
                   size: 22,
-                  color: kPrimaryColor,
+                  color: colors.primary,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   '队列: ${state.requestQueue.length}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: kPrimaryColor,
+                    color: colors.primary,
                   ),
                 ),
               ],
@@ -179,13 +171,14 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
   }
 
   Widget _buildTabBar() {
+    final colors = ref.watch(themeProvider);
     return Container(
-      color: kBgCard,
+      color: colors.bgCard,
       child: TabBar(
         controller: _tabController,
-        labelColor: kPrimaryColor,
-        unselectedLabelColor: kTextSecondary,
-        indicatorColor: kPrimaryColor,
+        labelColor: colors.primary,
+        unselectedLabelColor: colors.textSecondary,
+        indicatorColor: colors.primary,
         indicatorWeight: 3,
         indicatorSize: TabBarIndicatorSize.label,
         tabs: const [
@@ -226,10 +219,11 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
   }
 
   Widget _buildEditor() {
+    final colors = ref.watch(themeProvider);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -279,12 +273,13 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
   }
 
   Widget _buildEditorBottomBar() {
-    final statusColor = _getStatusColor(state.currentStatus);
+    final colors = ref.watch(themeProvider);
+    final statusColor = _getStatusColor(state.currentStatus, colors);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -351,7 +346,7 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('JSON 格式错误，请检查！错误信息: $e'),
-                      backgroundColor: kErrorColor,
+                      backgroundColor: colors.error,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -367,10 +362,10 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
                   color: state.requestQueue.isNotEmpty ? Colors.white : null),
               label: const Text('放行'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kSuccessColor,
+                backgroundColor: colors.success,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: kTextSecondary.withOpacity(0.2),
-                disabledForegroundColor: kTextSecondary.withOpacity(0.5),
+                disabledBackgroundColor: colors.textSecondary.withOpacity(0.2),
+                disabledForegroundColor: colors.textSecondary.withOpacity(0.5),
                 padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 0),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -384,14 +379,14 @@ class _ResponseEditPage extends ConsumerState<ResponseEditPage> with SingleTicke
     );
   }
 
-  Color _getStatusColor(InterceptStatus status) {
+  Color _getStatusColor(InterceptStatus status, AppColors colors) {
     switch (status) {
       case InterceptStatus.waiting:
-        return kSuccessColor;
+        return colors.success;
       case InterceptStatus.blocked:
-        return kErrorColor;
+        return colors.error;
       case InterceptStatus.released:
-        return kWarningColor;
+        return colors.warning;
     }
   }
 

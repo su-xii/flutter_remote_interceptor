@@ -3,16 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/dialog/mock_rule_dialog.dart';
 import 'package:remote_interceptor/model/mock_rule.dart';
 import 'package:remote_interceptor/model/request_record.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
-
-const Color kPrimaryColor = Color(0xFF165DFF);
-const Color kSuccessColor = Color(0xFF00B42A);
-const Color kWarningColor = Color(0xFFFF7D00);
-const Color kErrorColor = Color(0xFFF53F3F);
-const Color kTextPrimary = Color(0xFF1D2129);
-const Color kTextSecondary = Color(0xFF86909C);
-const Color kBgCard = Color(0xFFFFFFFF);
-const Color kBgPage = Color(0xFFF2F3F5);
 
 class MockResponsePage extends ConsumerStatefulWidget {
   const MockResponsePage({super.key});
@@ -71,113 +63,117 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
   void _handleDelete(String id) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: 300,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: kBgCard,
+      builder: (context) {
+        final colors = ref.watch(themeProvider);
+        return Dialog(
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: kErrorColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 300,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: colors.bgCard,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors.error.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    size: 40,
+                    color: colors.error,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.delete_outline,
-                  size: 40,
-                  color: kErrorColor,
+                const SizedBox(height: 20),
+                Text(
+                  '确认删除',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '确认删除',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: kTextPrimary,
+                const SizedBox(height: 12),
+                Text(
+                  '确定要删除这条Mock规则吗？',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '确定要删除这条Mock规则吗？',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: kTextSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        '取消',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: kTextSecondary,
-                          fontWeight: FontWeight.w500,
+                        child: Text(
+                          '取消',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: colors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ref.read(mockResponseViewModelProvider.notifier).deleteRule(id);
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kErrorColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ref.read(mockResponseViewModelProvider.notifier).deleteRule(id);
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        '删除',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                        child: const Text(
+                          '删除',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = ref.watch(themeProvider);
     final mockRules = ref.watch(mockResponseViewModelProvider).mockRules;
 
     return Scaffold(
-      backgroundColor: kBgPage,
+      backgroundColor: colors.bgPage,
       appBar: AppBar(
         title: const Text(
           'Mock规则管理',
@@ -187,7 +183,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: kPrimaryColor,
+        backgroundColor: colors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -196,13 +192,14 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
           : _buildRuleList(mockRules),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,
-        backgroundColor: kPrimaryColor,
+        backgroundColor: colors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    final colors = ref.watch(themeProvider);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -210,7 +207,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: kBgCard,
+              color: colors.bgCard,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -223,7 +220,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             child: Icon(
               Icons.rule_folder_outlined,
               size: 64,
-              color: kTextSecondary.withOpacity(0.4),
+              color: colors.textSecondary.withOpacity(0.4),
             ),
           ),
           const SizedBox(height: 24),
@@ -232,7 +229,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: kTextPrimary.withOpacity(0.6),
+              color: colors.textPrimary.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 8),
@@ -240,7 +237,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             '点击右下角按钮添加Mock规则',
             style: TextStyle(
               fontSize: 14,
-              color: kTextSecondary,
+              color: colors.textSecondary,
             ),
           ),
         ],
@@ -264,7 +261,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
   }
 }
 
-class _MockRuleItem extends StatelessWidget {
+class _MockRuleItem extends ConsumerWidget {
   final MockRule rule;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -276,13 +273,14 @@ class _MockRuleItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final methodColor = _getMethodColor();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeProvider);
+    final methodColor = _getMethodColor(rule.method);
     
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -308,14 +306,14 @@ class _MockRuleItem extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: rule.enabled
-                        ? kSuccessColor.withOpacity(0.1)
-                        : kTextSecondary.withOpacity(0.1),
+                        ? colors.success.withOpacity(0.1)
+                        : colors.textSecondary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     rule.enabled ? Icons.check_circle : Icons.pause_circle,
                     size: 22,
-                    color: rule.enabled ? kSuccessColor : kTextSecondary,
+                    color: rule.enabled ? colors.success : colors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -327,10 +325,10 @@ class _MockRuleItem extends StatelessWidget {
                       // URL
                       Text(
                         rule.url,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: kTextPrimary,
+                          color: colors.textPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -367,8 +365,8 @@ class _MockRuleItem extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: rule.enabled
-                                  ? kSuccessColor.withOpacity(0.1)
-                                  : kTextSecondary.withOpacity(0.1),
+                                  ? colors.success.withOpacity(0.1)
+                                  : colors.textSecondary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -377,8 +375,8 @@ class _MockRuleItem extends StatelessWidget {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: rule.enabled
-                                    ? kSuccessColor
-                                    : kTextSecondary,
+                                    ? colors.success
+                                    : colors.textSecondary,
                               ),
                             ),
                           ),
@@ -387,14 +385,14 @@ class _MockRuleItem extends StatelessWidget {
                           Icon(
                             Icons.trending_up,
                             size: 14,
-                            color: kTextSecondary.withOpacity(0.6),
+                            color: colors.textSecondary.withOpacity(0.6),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             "命中 ${rule.hitCount} 次",
                             style: TextStyle(
                               fontSize: 12,
-                              color: kTextSecondary.withOpacity(0.8),
+                              color: colors.textSecondary.withOpacity(0.8),
                             ),
                           ),
                         ],
@@ -408,13 +406,13 @@ class _MockRuleItem extends StatelessWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit, size: 20),
-                      color: kPrimaryColor,
+                      color: colors.primary,
                       onPressed: onEdit,
                       tooltip: '编辑',
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, size: 20),
-                      color: kErrorColor,
+                      color: colors.error,
                       onPressed: onDelete,
                       tooltip: '删除',
                     ),
@@ -428,8 +426,8 @@ class _MockRuleItem extends StatelessWidget {
     );
   }
 
-  Color _getMethodColor() {
-    switch (rule.method) {
+  Color _getMethodColor(HttpMethod method) {
+    switch (method) {
       case HttpMethod.GET:
         return const Color(0xFF3B82F6); // 蓝色
       case HttpMethod.POST:
@@ -441,7 +439,7 @@ class _MockRuleItem extends StatelessWidget {
       case HttpMethod.PATCH:
         return const Color(0xFF8B5CF6); // 紫色
       default:
-        return kTextSecondary;
+        return const Color(0xFF86909C); // 灰色
     }
   }
 }

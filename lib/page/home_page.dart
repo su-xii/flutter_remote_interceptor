@@ -3,24 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/dialog/switch_device_dialog.dart';
 import 'package:remote_interceptor/page/mock_response_page.dart';
 import 'package:remote_interceptor/page/response_edit_page.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/state/home_state.dart';
 import '../providers/viemodel_provider.dart';
 import '../state/server_status_state.dart';
 import '../widgets/link_switch.dart';
-const Color kPrimaryColor = Color(0xFF165DFF);
-const Color kBgPage = Color(0xFFF2F3F5);
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeProvider);
     final serverStatus = ref.watch(serverStatusViewModelProvider);
     final notifier = ref.read(homeViewModelProvider.notifier);
     final homeState = ref.watch(homeViewModelProvider);
 
     return Scaffold(
-      backgroundColor: kBgPage,
+      backgroundColor: colors.bgPage,
       appBar: AppBar(
         title: const Text(
           '响应拦截编辑器',
@@ -30,7 +30,7 @@ class HomePage extends ConsumerWidget {
             color: Colors.white,
           ),
         ),
-        backgroundColor: kPrimaryColor,
+        backgroundColor: colors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [

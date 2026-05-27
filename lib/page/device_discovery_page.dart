@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 import '../dialog/add_device_dialog.dart';
 import '../providers/providers.dart';
 import '../model/device_model.dart';
 import '../state/device_discovery_state.dart';
 import '../viewmodel/device_discovery_viewmodel.dart';
-
-const Color kPrimaryColor = Color(0xFF165DFF);
-const Color kSuccessColor = Color(0xFF00B42A);
-const Color kWarningColor = Color(0xFFFF7D00);
-const Color kErrorColor = Color(0xFFF53F3F);
-const Color kTextPrimary = Color(0xFF1D2129);
-const Color kTextSecondary = Color(0xFF86909C);
-const Color kBgCard = Color(0xFFFFFFFF);
-const Color kBgPage = Color(0xFFF2F3F5);
 
 class DeviceDiscoveryPage extends ConsumerStatefulWidget {
   const DeviceDiscoveryPage({super.key});
@@ -24,8 +16,6 @@ class DeviceDiscoveryPage extends ConsumerStatefulWidget {
 }
 
 class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
-
-
   void _showAddDeviceDialog() {
     showDialog(
       context: context,
@@ -35,12 +25,13 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = ref.watch(themeProvider);
     final state = ref.watch(deviceDiscoveryViewModelProvider);
     final devices = state.onlineDevices;
     final notifier = ref.read(deviceDiscoveryViewModelProvider.notifier);
 
     return Scaffold(
-      backgroundColor: kBgPage,
+      backgroundColor: colors.bgPage,
       appBar: AppBar(
         title: const Text(
           '设备发现',
@@ -50,7 +41,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: kPrimaryColor,
+        backgroundColor: colors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -63,24 +54,25 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
       ),
       body: Column(
         children: [
-          _buildStatusBar(state, devices.length),
+          _buildStatusBar(context, state, devices.length),
           
           Expanded(
             child: devices.isEmpty
-                ? _buildEmptyState(state)
-                : _buildDeviceList(devices, state, notifier),
+                ? _buildEmptyState(context, state)
+                : _buildDeviceList(context, devices, state, notifier),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusBar(DeviceDiscoveryState state, int deviceCount) {
+  Widget _buildStatusBar(BuildContext context, DeviceDiscoveryState state, int deviceCount) {
+    final colors = ref.watch(themeProvider);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -96,13 +88,13 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: state.isScanning 
-                  ? kSuccessColor.withOpacity(0.1) 
-                  : kTextSecondary.withOpacity(0.1),
+                  ? colors.success.withOpacity(0.1) 
+                  : colors.textSecondary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               state.isScanning ? Icons.wifi_tethering : Icons.wifi_off,
-              color: state.isScanning ? kSuccessColor : kTextSecondary,
+              color: state.isScanning ? colors.success : colors.textSecondary,
               size: 24,
             ),
           ),
@@ -116,15 +108,15 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: state.isScanning ? kSuccessColor : kTextSecondary,
+                    color: state.isScanning ? colors.success : colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '发现 $deviceCount 个在线设备',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: kTextSecondary,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -135,7 +127,8 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     );
   }
 
-  Widget _buildEmptyState(DeviceDiscoveryState state) {
+  Widget _buildEmptyState(BuildContext context, DeviceDiscoveryState state) {
+    final colors = ref.watch(themeProvider);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -143,7 +136,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: kBgCard,
+              color: colors.bgCard,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -156,16 +149,16 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             child: Icon(
               Icons.devices_other,
               size: 64,
-              color: kTextSecondary.withOpacity(0.4),
+              color: colors.textSecondary.withOpacity(0.4),
             ),
           ),
           const SizedBox(height: 24),
           Text(
             state.isScanning ? '正在搜索设备...' : '未发现设备',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: kTextPrimary,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -173,9 +166,9 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             state.isScanning 
                 ? '请确保手机和电脑在同一网络' 
                 : '等待扫描设备...',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: kTextSecondary,
+              color: colors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -184,7 +177,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     );
   }
 
-  Widget _buildDeviceList(List<DeviceModel> devices, DeviceDiscoveryState state, DeviceDiscoveryViewModel notifier) {
+  Widget _buildDeviceList(BuildContext context, List<DeviceModel> devices, DeviceDiscoveryState state, DeviceDiscoveryViewModel notifier) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: devices.length,
@@ -196,10 +189,11 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
   }
 
   Widget _buildDeviceCard(BuildContext context, DeviceDiscoveryState state, DeviceModel device, DeviceDiscoveryViewModel notifier) {
+    final colors = ref.watch(themeProvider);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: kBgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -218,7 +212,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
               : () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder: (ctx) => _buildConnectDialog(context, device),
+                    builder: (ctx) => _buildConnectDialog(ctx, device),
                   );
 
                   if (confirmed == true) {
@@ -234,12 +228,12 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.1),
+                    color: colors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.phone_iphone,
-                    color: kPrimaryColor,
+                    color: colors.primary,
                     size: 32,
                   ),
                 ),
@@ -251,18 +245,18 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                     children: [
                       Text(
                         device.info,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: kTextPrimary,
+                          color: colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '${device.serverIp}:${device.port}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: kTextSecondary,
+                          color: colors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -272,7 +266,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: device.isOnline ? kSuccessColor : kTextSecondary,
+                              color: device.isOnline ? colors.success : colors.textSecondary,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -281,7 +275,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                             device.isOnline ? '在线' : '离线',
                             style: TextStyle(
                               fontSize: 12,
-                              color: device.isOnline ? kSuccessColor : kTextSecondary,
+                              color: device.isOnline ? colors.success : colors.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -289,14 +283,14 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: kTextSecondary.withOpacity(0.6),
+                            color: colors.textSecondary.withOpacity(0.6),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _formatTime(device.lastSeenTime),
                             style: TextStyle(
                               fontSize: 12,
-                              color: kTextSecondary.withOpacity(0.8),
+                              color: colors.textSecondary.withOpacity(0.8),
                             ),
                           ),
                         ],
@@ -310,7 +304,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                   child: Icon(
                     Icons.arrow_forward_ios,
                     size: 18,
-                    color: kTextSecondary.withOpacity(0.5),
+                    color: colors.textSecondary.withOpacity(0.5),
                   ),
                 ),
               ],
@@ -322,6 +316,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
   }
 
   Widget _buildConnectDialog(BuildContext context, DeviceModel device) {
+    final colors = ref.watch(themeProvider);
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -331,7 +326,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
         width: 300,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: kBgCard,
+          color: colors.bgCard,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -340,22 +335,22 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.1),
+                color: colors.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.phonelink_setup,
                 size: 40,
-                color: kPrimaryColor,
+                color: colors.primary,
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               '连接设备',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: kTextPrimary,
+                color: colors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -363,7 +358,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
               '是否连接到设备？',
               style: TextStyle(
                 fontSize: 14,
-                color: kTextSecondary,
+                color: colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -371,17 +366,17 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: kBgPage,
+                color: colors.bgPage,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 children: [
                   Text(
                     device.info,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: kTextPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -389,7 +384,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                     '${device.serverIp}:${device.port}',
                     style: TextStyle(
                       fontSize: 13,
-                      color: kTextSecondary,
+                      color: colors.textSecondary,
                     ),
                   ),
                 ],
@@ -407,11 +402,11 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       '取消',
                       style: TextStyle(
                         fontSize: 15,
-                        color: kTextSecondary,
+                        color: colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -422,7 +417,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
+                      backgroundColor: colors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       elevation: 0,
@@ -460,4 +455,3 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
     }
   }
 }
-

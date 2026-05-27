@@ -5,16 +5,8 @@ import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/json.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 import 'package:remote_interceptor/model/request_record.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
-
-const Color kPrimaryColor = Color(0xFF165DFF);
-const Color kSuccessColor = Color(0xFF00B42A);
-const Color kWarningColor = Color(0xFFFF7D00);
-const Color kErrorColor = Color(0xFFF53F3F);
-const Color kTextPrimary = Color(0xFF1D2129);
-const Color kTextSecondary = Color(0xFF86909C);
-const Color kBgCard = Color(0xFFFFFFFF);
-const Color kBgPage = Color(0xFFF2F3F5);
 
 /// 请求详情弹窗
 class RequestDetailDialog extends ConsumerStatefulWidget {
@@ -58,6 +50,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = ref.watch(themeProvider);
     final isPending = widget.record.state == InterceptState.interceptedPending;
     final statusInfo = _getStatusInfo(widget.record.state);
 
@@ -71,7 +64,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
         height: MediaQuery.of(context).size.height * 0.8,
         constraints: const BoxConstraints(maxWidth: 900),
         decoration: BoxDecoration(
-          color: kBgCard,
+          color: colors.bgCard,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -90,7 +83,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: kTextSecondary.withOpacity(0.1),
+                    color: colors.textSecondary.withOpacity(0.1),
                     width: 1,
                   ),
                 ),
@@ -100,13 +93,13 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.1),
+                      color: colors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.description,
                       size: 22,
-                      color: kPrimaryColor,
+                      color: colors.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -114,19 +107,19 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           '请求详情',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: kTextPrimary,
+                            color: colors.textPrimary,
                           ),
                         ),
                         Text(
                           'Request ID: ${widget.record.requestId}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: kTextSecondary.withOpacity(0.7),
+                            color: colors.textSecondary.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -164,7 +157,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    color: kTextSecondary,
+                    color: colors.textSecondary,
                     onPressed: () => Navigator.of(context).pop(),
                     tooltip: '关闭',
                   ),
@@ -178,19 +171,21 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: kBgPage,
+                  color: colors.bgPage,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildInfoItem(
+                      colors,
                       Icons.numbers,
                       '记录 ID',
                       widget.record.id,
                     ),
                     const SizedBox(height: 12),
                     _buildInfoItem(
+                      colors,
                       Icons.access_time,
                       '时间',
                       _formatTime(widget.record.timestamp),
@@ -207,7 +202,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: kTextSecondary.withOpacity(0.15),
+                      color: colors.textSecondary.withOpacity(0.15),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -262,7 +257,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(
-                      color: kTextSecondary.withOpacity(0.1),
+                      color: colors.textSecondary.withOpacity(0.1),
                       width: 1,
                     ),
                   ),
@@ -281,12 +276,12 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         '取消',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: kTextSecondary,
+                          color: colors.textSecondary,
                         ),
                       ),
                     ),
@@ -296,7 +291,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
                       icon: const Icon(Icons.send, size: 18,color: Colors.white),
                       label: const Text('放行'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: kSuccessColor,
+                        backgroundColor: colors.success,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -318,29 +313,29 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String value) {
+  Widget _buildInfoItem(AppColors colors, IconData icon, String label, String value) {
     return Row(
       children: [
         Icon(
           icon,
           size: 16,
-          color: kTextSecondary.withOpacity(0.6),
+          color: colors.textSecondary.withOpacity(0.6),
         ),
         const SizedBox(width: 8),
         Text(
           '$label: ',
           style: TextStyle(
             fontSize: 13,
-            color: kTextSecondary.withOpacity(0.8),
+            color: colors.textSecondary.withOpacity(0.8),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: kTextPrimary,
+              color: colors.textPrimary,
             ),
           ),
         ),
@@ -349,6 +344,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
   }
 
   Map<String, dynamic> _getStatusInfo(InterceptState state) {
+    final colors = ref.read(themeProvider);
     IconData icon;
     Color color;
     String label;
@@ -356,17 +352,17 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
     switch (state) {
       case InterceptState.notIntercepted:
         icon = Icons.check_circle;
-        color = kSuccessColor;
+        color = colors.success;
         label = '未拦截';
         break;
       case InterceptState.interceptedPending:
         icon = Icons.pending_actions;
-        color = kWarningColor;
+        color = colors.warning;
         label = '拦截未处理';
         break;
       case InterceptState.interceptedProcessed:
         icon = Icons.done_all;
-        color = kPrimaryColor;
+        color = colors.primary;
         label = '已放行';
         break;
     }
@@ -379,6 +375,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
   }
 
   void _handleRelease() {
+    final colors = ref.read(themeProvider);
     try {
       // 解析 JSON
       final modifiedData = json.decode(_controller.text) as Map<String, dynamic>;
@@ -393,7 +390,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('JSON 格式错误: $e'),
-          backgroundColor: kErrorColor,
+          backgroundColor: colors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),

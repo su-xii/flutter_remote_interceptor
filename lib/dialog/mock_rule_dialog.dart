@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/model/mock_rule.dart';
 import 'package:remote_interceptor/model/request_record.dart';
-
-const Color kPrimaryColor = Color(0xFF165DFF);
-const Color kSuccessColor = Color(0xFF00B42A);
-const Color kWarningColor = Color(0xFFFF7D00);
-const Color kErrorColor = Color(0xFFF53F3F);
-const Color kTextPrimary = Color(0xFF1D2129);
-const Color kTextSecondary = Color(0xFF86909C);
-const Color kBgCard = Color(0xFFFFFFFF);
-const Color kBgPage = Color(0xFFF2F3F5);
+import 'package:remote_interceptor/providers/theme_provider.dart';
 
 typedef OnSave = void Function({
   required String url,
@@ -19,7 +12,7 @@ typedef OnSave = void Function({
   String? id,
 });
 
-class MockRuleDialog extends StatefulWidget {
+class MockRuleDialog extends ConsumerStatefulWidget {
   final MockRule? rule;
   final OnSave onSave;
 
@@ -30,10 +23,10 @@ class MockRuleDialog extends StatefulWidget {
   });
 
   @override
-  State<MockRuleDialog> createState() => _MockRuleDialogState();
+  ConsumerState<MockRuleDialog> createState() => _MockRuleDialogState();
 }
 
-class _MockRuleDialogState extends State<MockRuleDialog> {
+class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
   late TextEditingController _urlController;
   late TextEditingController _mockDataController;
   late HttpMethod _selectedMethod;
@@ -63,11 +56,12 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
   }
 
   void _handleSave() {
+    final colors = ref.read(themeProvider);
     if (_urlController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('请输入URL'),
-          backgroundColor: kErrorColor,
+          backgroundColor: colors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -81,7 +75,7 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('请输入Mock数据'),
-          backgroundColor: kErrorColor,
+          backgroundColor: colors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -103,6 +97,7 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = ref.watch(themeProvider);
     final isEdit = widget.rule != null;
 
     return Dialog(
@@ -114,7 +109,7 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
         width: 480,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: kBgCard,
+          color: colors.bgCard,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -133,13 +128,13 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.1),
+                    color: colors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     isEdit ? Icons.edit_note : Icons.add_box_outlined,
                     size: 24,
-                    color: kPrimaryColor,
+                    color: colors.primary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -149,17 +144,17 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                     children: [
                       Text(
                         isEdit ? '编辑Mock规则' : '添加Mock规则',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: kTextPrimary,
+                          color: colors.textPrimary,
                         ),
                       ),
                       Text(
                         isEdit ? '修改已有的Mock规则配置' : '创建新的Mock规则',
                         style: TextStyle(
                           fontSize: 13,
-                          color: kTextSecondary,
+                          color: colors.textSecondary,
                         ),
                       ),
                     ],
@@ -187,14 +182,14 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                          color: kTextSecondary.withOpacity(0.3),
+                          color: colors.textSecondary.withOpacity(0.3),
                           width: 1.5,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
+                        borderSide: BorderSide(
+                          color: colors.primary,
                           width: 2,
                         ),
                       ),
@@ -210,22 +205,22 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: kBgPage,
+                      color: colors.bgPage,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: kTextSecondary.withOpacity(0.3),
+                        color: colors.textSecondary.withOpacity(0.3),
                         width: 1.5,
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.http, size: 20, color: kTextSecondary),
+                        const Icon(Icons.http, size: 20),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           'HTTP 方法',
                           style: TextStyle(
                             fontSize: 14,
-                            color: kTextSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                         const Spacer(),
@@ -280,14 +275,14 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                          color: kTextSecondary.withOpacity(0.3),
+                          color: colors.textSecondary.withOpacity(0.3),
                           width: 1.5,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
+                        borderSide: BorderSide(
+                          color: colors.primary,
                           width: 2,
                         ),
                       ),
@@ -303,10 +298,10 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: kBgPage,
+                      color: colors.bgPage,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: kTextSecondary.withOpacity(0.3),
+                        color: colors.textSecondary.withOpacity(0.3),
                         width: 1.5,
                       ),
                     ),
@@ -316,23 +311,23 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: _enabled
-                                ? kSuccessColor.withOpacity(0.1)
-                                : kTextSecondary.withOpacity(0.1),
+                                ? colors.success.withOpacity(0.1)
+                                : colors.textSecondary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             _enabled ? Icons.check_circle : Icons.pause_circle,
                             size: 20,
-                            color: _enabled ? kSuccessColor : kTextSecondary,
+                            color: _enabled ? colors.success : colors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           '启用规则',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: kTextPrimary,
+                            color: colors.textPrimary,
                           ),
                         ),
                         const Spacer(),
@@ -343,8 +338,8 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                             onChanged: (value) {
                               setState(() => _enabled = value);
                             },
-                            activeColor: kSuccessColor,
-                            activeTrackColor: kSuccessColor.withOpacity(0.3),
+                            activeColor: colors.success,
+                            activeTrackColor: colors.success.withOpacity(0.3),
                           ),
                         ),
                       ],
@@ -367,12 +362,12 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       '取消',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: kTextSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ),
@@ -382,7 +377,7 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
                   child: ElevatedButton(
                     onPressed: _handleSave,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
+                      backgroundColor: colors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       elevation: 0,
@@ -420,7 +415,8 @@ class _MockRuleDialogState extends State<MockRuleDialog> {
       case HttpMethod.PATCH:
         return const Color(0xFF8B5CF6); // 紫色
       default:
-        return kTextSecondary;
+        final colors = ref.read(themeProvider);
+        return colors.textSecondary;
     }
   }
 }

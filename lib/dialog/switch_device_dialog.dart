@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 
-import '../page/device_discovery_page.dart'; // 确保导入你的状态或 ViewModel
-
-class SwitchDeviceDialog extends StatelessWidget {
+class SwitchDeviceDialog extends ConsumerWidget {
   final VoidCallback onSwitchConfirmed;
 
   const SwitchDeviceDialog({
@@ -11,7 +11,9 @@ class SwitchDeviceDialog extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeProvider);
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -21,7 +23,7 @@ class SwitchDeviceDialog extends StatelessWidget {
         width: 420,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: kBgCard,
+          color: colors.bgCard,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -31,23 +33,23 @@ class SwitchDeviceDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: kWarningColor.withOpacity(0.1),
+                color: colors.warning.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.swap_horiz,
                 size: 40,
-                color: kWarningColor,
+                color: colors.warning,
               ),
             ),
             const SizedBox(height: 20),
             // 标题
-            const Text(
+            Text(
               '切换设备',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: kTextPrimary,
+                color: colors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -56,7 +58,7 @@ class SwitchDeviceDialog extends StatelessWidget {
               '确定要断开当前连接并选择其他设备吗？',
               style: TextStyle(
                 fontSize: 14,
-                color: kTextSecondary,
+                color: colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -74,11 +76,11 @@ class SwitchDeviceDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       '取消',
                       style: TextStyle(
                         fontSize: 15,
-                        color: kTextSecondary,
+                        color: colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -93,7 +95,7 @@ class SwitchDeviceDialog extends StatelessWidget {
                       onSwitchConfirmed(); // 执行外部传入的业务逻辑
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
+                      backgroundColor: colors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       elevation: 0,

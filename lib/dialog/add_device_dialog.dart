@@ -1,9 +1,8 @@
 import 'package:dio_remote_interceptor/dio_remote_interceptor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
-
-import '../page/device_discovery_page.dart';
 
 class AddDeviceDialog extends ConsumerStatefulWidget {
   const AddDeviceDialog({super.key});
@@ -31,17 +30,18 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
       ref.read(deviceDiscoveryViewModelProvider.notifier);
 
   void _handleAdd() {
+    final colors = ref.read(themeProvider);
     if (_formKey.currentState!.validate()) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('设备添加成功'),
-          backgroundColor: kSuccessColor,
+        SnackBar(
+          content: const Text('设备添加成功'),
+          backgroundColor: colors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
+          shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(8)),
           ),
-          margin: EdgeInsets.all(16),
+          margin: const EdgeInsets.all(16),
         ),
       );
       _discoveryViewModel.addDevice(
@@ -53,6 +53,8 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = ref.watch(themeProvider);
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -62,7 +64,7 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
         width: 420,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: kBgCard,
+          color: colors.bgCard,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -84,33 +86,33 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.1),
+                      color: colors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.add_to_queue,
                       size: 24,
-                      color: kPrimaryColor,
+                      color: colors.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           '手动添加设备',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
-                            color: kTextPrimary,
+                            color: colors.textPrimary,
                           ),
                         ),
                         Text(
                           '直接输入设备信息连接',
                           style: TextStyle(
                             fontSize: 13,
-                            color: kTextSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
@@ -133,14 +135,14 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
-                      color: kTextSecondary.withOpacity(0.3),
+                      color: colors.textSecondary.withOpacity(0.3),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(
-                      color: kPrimaryColor,
+                    borderSide: BorderSide(
+                      color: colors.primary,
                       width: 2,
                     ),
                   ),
@@ -171,14 +173,14 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
-                      color: kTextSecondary.withOpacity(0.3),
+                      color: colors.textSecondary.withOpacity(0.3),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(
-                      color: kPrimaryColor,
+                    borderSide: BorderSide(
+                      color: colors.primary,
                       width: 2,
                     ),
                   ),
@@ -206,7 +208,6 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
               TextFormField(
                 controller: _portController,
                 keyboardType: TextInputType.number,
-                // 当前版本先不可编辑
                 enabled: false,
                 decoration: InputDecoration(
                   labelText: '端口号',
@@ -218,14 +219,14 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
-                      color: kTextSecondary.withOpacity(0.3),
+                      color: colors.textSecondary.withOpacity(0.3),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(
-                      color: kPrimaryColor,
+                    borderSide: BorderSide(
+                      color: colors.primary,
                       width: 2,
                     ),
                   ),
@@ -259,12 +260,12 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         '取消',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: kTextSecondary,
+                          color: colors.textSecondary,
                         ),
                       ),
                     ),
@@ -276,7 +277,7 @@ class _AddDeviceDialogState extends ConsumerState<AddDeviceDialog> {
                       icon: const Icon(Icons.add, size: 18,color: Colors.white,),
                       label: const Text('添加设备'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
+                        backgroundColor: colors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         elevation: 0,
