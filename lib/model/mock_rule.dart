@@ -7,7 +7,7 @@ class MockRule {
   final HttpMethod method;
   final String mockData;
   final bool enabled;
-  // 命中次数
+  final String? remark;
   final int hitCount;
 
   MockRule({
@@ -16,6 +16,7 @@ class MockRule {
     required this.method,
     required this.mockData,
     required this.enabled,
+    this.remark,
     this.hitCount = 0
   });
 
@@ -26,6 +27,8 @@ class MockRule {
       method: HttpMethod.fromString(json['method']),
       mockData: json['mockData'],
       enabled: json['enabled'] ?? false,
+      remark: json['remark'],
+      hitCount: json['hitCount'] ?? 0,
     );
   }
 
@@ -36,6 +39,8 @@ class MockRule {
       'method': method.name,
       'mockData': mockData,
       'enabled': enabled,
+      'remark': remark,
+      'hitCount': hitCount,
     };
   }
 
@@ -45,6 +50,7 @@ class MockRule {
     HttpMethod? method,
     String? mockData,
     bool? enabled,
+    String? remark,
     int? hitCount,
   }) {
     return MockRule(
@@ -53,6 +59,7 @@ class MockRule {
       method: method ?? this.method,
       mockData: mockData ?? this.mockData,
       enabled: enabled ?? this.enabled,
+      remark: remark ?? this.remark,
       hitCount: hitCount ?? this.hitCount,
     );
   }

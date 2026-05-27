@@ -9,6 +9,7 @@ typedef OnSave = void Function({
   required HttpMethod method,
   required String mockData,
   required bool enabled,
+  String? remark,
   String? id,
 });
 
@@ -29,6 +30,7 @@ class MockRuleDialog extends ConsumerStatefulWidget {
 class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
   late TextEditingController _urlController;
   late TextEditingController _mockDataController;
+  late TextEditingController _remarkController;
   late HttpMethod _selectedMethod;
   late bool _enabled;
 
@@ -38,11 +40,13 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
     if (widget.rule != null) {
       _urlController = TextEditingController(text: widget.rule!.url);
       _mockDataController = TextEditingController(text: widget.rule!.mockData);
+      _remarkController = TextEditingController(text: widget.rule!.remark);
       _selectedMethod = widget.rule!.method;
       _enabled = widget.rule!.enabled;
     } else {
       _urlController = TextEditingController();
       _mockDataController = TextEditingController();
+      _remarkController = TextEditingController();
       _selectedMethod = HttpMethod.GET;
       _enabled = true;
     }
@@ -52,6 +56,7 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
   void dispose() {
     _urlController.dispose();
     _mockDataController.dispose();
+    _remarkController.dispose();
     super.dispose();
   }
 
@@ -90,6 +95,7 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
       method: _selectedMethod,
       mockData: _mockDataController.text,
       enabled: _enabled,
+      remark: _remarkController.text.isEmpty ? null : _remarkController.text,
       id: widget.rule?.id,
     );
     Navigator.pop(context);
@@ -170,6 +176,38 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // 备注输入框
+                    TextFormField(
+                      controller: _remarkController,
+                      decoration: InputDecoration(
+                        labelText: '备注（可选）',
+                        hintText: '例如：用户登录成功',
+                        prefixIcon: const Icon(Icons.sticky_note_2_outlined, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: colors.textSecondary.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
                     // URL 输入框
                     TextFormField(
                       controller: _urlController,

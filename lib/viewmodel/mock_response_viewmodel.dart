@@ -51,6 +51,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
     required HttpMethod method,
     required String mockData,
     required bool enabled,
+    String? remark,
   }) async {
     final newRule = MockRule(
       id: DateTime.now().toIso8601String(),
@@ -58,6 +59,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
       method: method,
       mockData: mockData,
       enabled: enabled,
+      remark: remark,
     );
     
     List<MockRule> newRules;
@@ -83,6 +85,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
     required HttpMethod method,
     required String mockData,
     required bool enabled,
+    String? remark,
   }) async {
     List<MockRule> newRules;
     
@@ -94,6 +97,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
             method: method,
             mockData: mockData,
             enabled: enabled,
+            remark: remark,
           );
         }
         if (rule.url == url && rule.method == method) {
@@ -109,6 +113,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
             method: method,
             mockData: mockData,
             enabled: enabled,
+            remark: remark,
           );
         }
         return rule;

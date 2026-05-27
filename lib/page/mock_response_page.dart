@@ -24,12 +24,14 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             required HttpMethod method,
             required String mockData,
             required bool enabled,
+            String? remark,
             String? id}) {
           ref.read(mockResponseViewModelProvider.notifier).addRule(
                 url: url,
                 method: method,
                 mockData: mockData,
                 enabled: enabled,
+                remark: remark,
               );
         },
       ),
@@ -46,6 +48,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             required HttpMethod method,
             required String mockData,
             required bool enabled,
+            String? remark,
             String? id}) {
           if (id != null) {
             ref.read(mockResponseViewModelProvider.notifier).updateRule(
@@ -54,6 +57,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
                   method: method,
                   mockData: mockData,
                   enabled: enabled,
+                  remark: remark,
                 );
           }
         },
@@ -312,13 +316,27 @@ class _MockRuleItem extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // 如果有备注，显示备注
+                      if (rule.remark != null) ...[
+                        Text(
+                          rule.remark!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                      ],
                       // URL
                       Text(
                         rule.url,
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
+                          fontSize: rule.remark != null ? 13 : 15,
+                          fontWeight: rule.remark != null ? FontWeight.w500 : FontWeight.w600,
+                          color: colors.textSecondary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
