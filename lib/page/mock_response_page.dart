@@ -5,6 +5,7 @@ import 'package:remote_interceptor/model/mock_rule.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
+import 'package:remote_interceptor/widgets/hit_counter_widget.dart';
 
 class MockResponsePage extends ConsumerStatefulWidget {
   const MockResponsePage({super.key});
@@ -239,6 +240,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
       itemBuilder: (context, index) {
         final rule = mockRules[index];
         return _MockRuleItem(
+          key: ValueKey(rule.id),
           rule: rule,
           onEdit: () => _showEditDialog(rule),
           onDelete: () => _handleDelete(rule.id),
@@ -254,6 +256,7 @@ class _MockRuleItem extends ConsumerWidget {
   final VoidCallback onDelete;
 
   const _MockRuleItem({
+    super.key,
     required this.rule,
     required this.onEdit,
     required this.onDelete,
@@ -369,19 +372,7 @@ class _MockRuleItem extends ConsumerWidget {
                           ),
                           const SizedBox(width: 8),
                           // 命中次数
-                          Icon(
-                            Icons.trending_up,
-                            size: 14,
-                            color: colors.textSecondary.withOpacity(0.6),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "命中 ${rule.hitCount} 次",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colors.textSecondary.withOpacity(0.8),
-                            ),
-                          ),
+                          HitCounterWidget(hitCount: rule.hitCount),
                         ],
                       ),
                     ],
