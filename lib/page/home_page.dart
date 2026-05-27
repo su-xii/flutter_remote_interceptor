@@ -71,7 +71,7 @@ class HomePage extends ConsumerWidget {
             child:PageView(
               physics: const NeverScrollableScrollPhysics(),
               controller: notifier.pageController,
-              // allowImplicitScrolling: true,
+              allowImplicitScrolling: true,
               children: [
                 const ResponseEditPage(),
                 const MockResponsePage()
