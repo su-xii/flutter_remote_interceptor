@@ -22,28 +22,21 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: colors.bgPage,
       appBar: AppBar(
-        title: const Text(
-          '响应拦截编辑器',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+        title: LinkSwitch(
+          isLink: homeState.interceptorMode == InterceptorMode.edit,
+          onChanged: (_) => notifier.switchMode(),
         ),
         backgroundColor: colors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          LinkSwitch(
-            isLink: homeState.interceptorMode == InterceptorMode.edit,
-            onChanged: (_) => notifier.switchMode(),
-          ),
           IconButton(
             icon: const Icon(Icons.swap_horiz, size: 22),
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (ctx) => SwitchDeviceDialog(onSwitchConfirmed: notifier.switchDevice),
+                builder: (ctx) => SwitchDeviceDialog(
+                    onSwitchConfirmed: notifier.switchDevice),
               );
             },
             tooltip: '切换设备',
@@ -59,8 +52,10 @@ class HomePage extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 _buildStatusIndicator(
-                  label: _getClientStatusText(serverStatus.clientConnectionStatus),
-                  icon: _getClientStatusIcon(serverStatus.clientConnectionStatus),
+                  label:
+                      _getClientStatusText(serverStatus.clientConnectionStatus),
+                  icon:
+                      _getClientStatusIcon(serverStatus.clientConnectionStatus),
                 ),
               ],
             ),
@@ -70,21 +65,17 @@ class HomePage extends ConsumerWidget {
       body: Column(
         children: [
           Expanded(
-            child:PageView(
+            child: PageView(
               physics: const NeverScrollableScrollPhysics(),
               controller: notifier.pageController,
               allowImplicitScrolling: true,
-              children: [
-                const ResponseEditPage(),
-                const MockResponsePage()
-              ],
+              children: [const ResponseEditPage(), const MockResponsePage()],
             ),
           )
         ],
       ),
     );
   }
-
 
   /// 构建通用的状态指示器 UI
   static Widget _buildStatusIndicator({
@@ -114,7 +105,6 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
-
 
   static String _getServerStatusText(ServerStatus status) {
     switch (status) {

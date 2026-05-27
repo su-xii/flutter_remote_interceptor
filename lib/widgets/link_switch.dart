@@ -13,29 +13,69 @@ class LinkSwitch extends StatelessWidget {
       onTap: ()=> onChanged.call(!isLink),
       child: Container(
         height: size,
-        padding: const EdgeInsets.all(1),
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: isLink ? Colors.blue : Colors.grey,
+          borderRadius: BorderRadius.circular(12),
+          color: isLink ? const Color(0xFF00BCD4).withOpacity(0.15) : Colors.grey.withOpacity(0.15),
+          border: Border.all(
+            color: isLink ? const Color(0xFF00BCD4).withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+            width: 1.5,
+          ),
         ),
         child: Row(
-          spacing: 4,
-          children: isLink ? _() : _().reversed.toList(),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isLink)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    "Mock模式",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            Container(
+              width: size - 6,
+              height: size - 6,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: isLink ? const Color(0xFF00BCD4) : const Color(0xFF00BCD4),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isLink ? const Color(0xFF00BCD4) : const Color(0xFF00BCD4)).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                isLink ? Icons.edit_square : Icons.rule,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            if (isLink)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    "编辑模式",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
-  }
-
-  List<Widget> _(){
-    return [Center(child: Text(isLink ? "编辑模式" : "Mock模式")),
-      Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Colors.white,
-        ),
-        child: Icon(Icons.ac_unit),
-      )];
   }
 }

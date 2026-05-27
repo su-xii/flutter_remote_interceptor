@@ -174,19 +174,6 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
 
     return Scaffold(
       backgroundColor: colors.bgPage,
-      appBar: AppBar(
-        title: const Text(
-          'Mock规则管理',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: colors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
       body: mockRules.isEmpty
           ? _buildEmptyState()
           : _buildRuleList(mockRules),
