@@ -7,6 +7,8 @@ import 'package:remote_interceptor/state/home_state.dart';
 import '../providers/viemodel_provider.dart';
 import '../state/server_status_state.dart';
 import '../widgets/link_switch.dart';
+const Color kPrimaryColor = Color(0xFF165DFF);
+const Color kBgPage = Color(0xFFF2F3F5);
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
