@@ -27,7 +27,7 @@ class LinkSwitch extends StatelessWidget {
   }
 
   List<Widget> _(){
-    return [Center(child: Text(isLink ? "编辑模式" : "mock模式")),
+    return [Center(child: Text(isLink ? "编辑模式" : "Mock模式")),
       Container(
         width: size,
         height: size,

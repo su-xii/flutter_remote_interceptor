@@ -119,227 +119,43 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 标题区域
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: colors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isEdit ? Icons.edit_note : Icons.add_box_outlined,
-                    size: 24,
-                    color: colors.primary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isEdit ? '编辑Mock规则' : '添加Mock规则',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        isEdit ? '修改已有的Mock规则配置' : '创建新的Mock规则',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // 表单内容
-            SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题区域
+              Row(
                 children: [
-                  // URL 输入框
-                  TextFormField(
-                    controller: _urlController,
-                    decoration: InputDecoration(
-                      labelText: 'URL',
-                      hintText: 'https://api.web.com/test',
-                      prefixIcon: const Icon(Icons.link, size: 20),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: colors.textSecondary.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: colors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // HTTP 方法选择
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: colors.bgPage,
+                      color: colors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: colors.textSecondary.withOpacity(0.3),
-                        width: 1.5,
-                      ),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.http, size: 20),
-                        const SizedBox(width: 12),
-                        Text(
-                          'HTTP 方法',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                        const Spacer(),
-                        DropdownButton<HttpMethod>(
-                          value: _selectedMethod,
-                          underline: const SizedBox(),
-                          items: HttpMethod.values.map((method) {
-                            return DropdownMenuItem(
-                              value: method,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getMethodColor(method).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  method.name,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getMethodColor(method),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _selectedMethod = value);
-                            }
-                          },
-                        ),
-                      ],
+                    child: Icon(
+                      isEdit ? Icons.edit_note : Icons.add_box_outlined,
+                      size: 24,
+                      color: colors.primary,
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Mock 数据输入框
-                  TextFormField(
-                    controller: _mockDataController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      labelText: 'Mock数据',
-                      hintText: '{"code": 200, "data": {}}',
-                      prefixIcon: const Icon(Icons.code, size: 20),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: colors.textSecondary.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: colors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 启用开关
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: colors.bgPage,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: colors.textSecondary.withOpacity(0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _enabled
-                                ? colors.success.withOpacity(0.1)
-                                : colors.textSecondary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            _enabled ? Icons.check_circle : Icons.pause_circle,
-                            size: 20,
-                            color: _enabled ? colors.success : colors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Text(
-                          '启用规则',
+                          isEdit ? '编辑Mock规则' : '添加Mock规则',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
                             color: colors.textPrimary,
                           ),
                         ),
-                        const Spacer(),
-                        Transform.scale(
-                          scale: 0.9,
-                          child: Switch(
-                            value: _enabled,
-                            onChanged: (value) {
-                              setState(() => _enabled = value);
-                            },
-                            activeColor: colors.success,
-                            activeTrackColor: colors.success.withOpacity(0.3),
+                        Text(
+                          isEdit ? '修改已有的Mock规则配置' : '创建新的Mock规则',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
@@ -347,56 +163,242 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
 
-            // 按钮区域
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+              // 表单内容
+              SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // URL 输入框
+                    TextFormField(
+                      controller: _urlController,
+                      decoration: InputDecoration(
+                        labelText: 'URL',
+                        hintText: 'https://api.web.com/test',
+                        prefixIcon: const Icon(Icons.link, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: colors.textSecondary.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      '取消',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: colors.textSecondary,
+                    const SizedBox(height: 16),
+
+                    // HTTP 方法选择
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: colors.bgPage,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: colors.textSecondary.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.http, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            'HTTP 方法',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                          const Spacer(),
+                          DropdownButton<HttpMethod>(
+                            value: _selectedMethod,
+                            underline: const SizedBox(),
+                            items: HttpMethod.values.map((method) {
+                              return DropdownMenuItem(
+                                value: method,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getMethodColor(method).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    method.name,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _getMethodColor(method),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _selectedMethod = value);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Mock 数据输入框
+                    TextFormField(
+                      controller: _mockDataController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: 'Mock数据',
+                        hintText: '{"code": 200, "data": {}}',
+                        prefixIcon: const Icon(Icons.code, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: colors.textSecondary.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: colors.primary,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 启用开关
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: colors.bgPage,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: colors.textSecondary.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _enabled
+                                  ? colors.success.withOpacity(0.1)
+                                  : colors.textSecondary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              _enabled ? Icons.check_circle : Icons.pause_circle,
+                              size: 20,
+                              color: _enabled ? colors.success : colors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '启用规则',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const Spacer(),
+                          Transform.scale(
+                            scale: 0.9,
+                            child: Switch(
+                              value: _enabled,
+                              onChanged: (value) {
+                                setState(() => _enabled = value);
+                              },
+                              activeColor: colors.success,
+                              activeTrackColor: colors.success.withOpacity(0.3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 按钮区域
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        '取消',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: colors.textSecondary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _handleSave,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _handleSave,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      '保存',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                      child: const Text(
+                        '保存',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

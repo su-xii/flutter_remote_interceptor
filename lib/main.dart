@@ -2,10 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/application.dart';
 import 'package:remote_interceptor/router/router_util.dart';
-import 'package:remote_interceptor/providers/providers.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
+
+  final size = Size(800, 600);
+  WindowOptions windowOptions = WindowOptions(
+    minimumSize: size,
+    size: size,
+    center: true,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    titleBarStyle: TitleBarStyle.normal,
+  );
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
 
   runApp(
     ProviderScope(
