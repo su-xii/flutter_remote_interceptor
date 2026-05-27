@@ -1,163 +1,41 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/server/remote_server.dart';
 import 'package:remote_interceptor/state/home_state.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/router/router_util.dart';
 
-import '../providers/providers.dart';
 
 class HomeViewModel extends StateNotifier<HomeState> {
 
   final RemoteServer _remoteServer;
-  HomeViewModel(this._remoteServer):super(HomeState.initial()){
-    _remoteServer.requestHandler = _handleRequest;
-  }
+  HomeViewModel(this._remoteServer):super(HomeState.initial());
 
+  final PageController pageController = PageController();
 
   @override
   void dispose() {
     _remoteServer.requestHandler = null;
     _remoteServer.disconnectClient();
+    pageController.dispose();
     super.dispose();
   }
 
-  Future<Map<String, dynamic>> _handleRequest(Map<String, dynamic> requestData) async {
+  void switchMode() {
     state = state.copyWith(
-      recordCounter: state.recordCounter + 1,
-    );
-    
-    final String recordId = 'req_${state.recordCounter}';
-    final String requestId = requestData['requestId']?.toString() ?? 'unknown';
-
-    final record = RequestRecord(
-      id: recordId,
-      requestId: requestId,
-      originalData: Map<String, dynamic>.from(requestData),
-      timestamp: DateTime.now(),
-      state: state.isIntercepting ? InterceptState.interceptedPending : InterceptState.notIntercepted,
-    );
-
-    state = state.copyWith(
-      requestRecords: [...state.requestRecords, record],
-    );
-
-    if (!state.isIntercepting) {
-      return requestData;
-    }
-
-    const JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    final String jsonText = encoder.convert(requestData);
-
-    final completer = Completer<Map<String, dynamic>>();
-    final task = InterceptTask(recordId, jsonText, completer);
-
-    state = state.copyWith(
-      requestQueue: [...state.requestQueue, task],
-    );
-
-    if (state.requestQueue.length == 1) {
-      state = state.copyWith(
-        currentStatus: InterceptStatus.blocked,
-        currentJsonText: jsonText,
-      );
-    }
-
-    final modifiedData = await completer.future;
-
-    final updatedRecords = state.requestRecords.map((r) {
-      if (r.id == recordId) {
-        return r.copyWith(
-          state: InterceptState.interceptedProcessed,
-          modifiedData: modifiedData,
-        );
-      }
-      return r;
-    }).toList();
-
-    state = state.copyWith(
-      requestRecords: updatedRecords,
-    );
-
-    return modifiedData;
+        interceptorMode: InterceptorMode.values[
+            (state.interceptorMode.index + 1) % InterceptorMode.values.length
+        ]);
+    pageController.animateToPage(state.interceptorMode.index, duration: Duration(milliseconds: 150), curve: Curves.linear);
   }
 
-  void handleSave() {
-    if (state.requestQueue.isEmpty) return;
-
-    try {
-      Map<String, dynamic> modifiedData = json.decode(state.currentJsonText) as Map<String, dynamic>;
-
-      final firstTask = state.requestQueue.first;
-      firstTask.completer.complete(modifiedData);
-
-      final newQueue = List<InterceptTask>.from(state.requestQueue)..removeAt(0);
-
-      if (newQueue.isNotEmpty) {
-        state = state.copyWith(
-          requestQueue: newQueue,
-          currentStatus: InterceptStatus.blocked,
-          currentJsonText: newQueue.first.jsonData,
-        );
-      } else {
-        state = state.copyWith(
-          requestQueue: [],
-          currentStatus: InterceptStatus.waiting,
-          currentJsonText: '',
-        );
-      }
-    } catch (e) {
-      rethrow;
-    }
+  void goToDeviceDiscovery() {
+    RouterUtil.goToDeviceDiscovery();
   }
 
-  void toggleIntercepting(bool value) {
-    state = state.copyWith(isIntercepting: value);
-  }
-
-  void updateJsonText(String text) {
-    state = state.copyWith(currentJsonText: text);
-  }
-
-  void releaseRequestById(String recordId, Map<String, dynamic> modifiedData) {
-    final queueIndex = state.requestQueue.indexWhere((task) => task.requestId == recordId);
-    
-    if (queueIndex != -1) {
-      final task = state.requestQueue[queueIndex];
-      task.completer.complete(modifiedData);
-      
-      final newQueue = List<InterceptTask>.from(state.requestQueue)..removeAt(queueIndex);
-      
-      final updatedRecords = state.requestRecords.map((r) {
-        if (r.id == recordId) {
-          return r.copyWith(
-            state: InterceptState.interceptedProcessed,
-            modifiedData: modifiedData,
-          );
-        }
-        return r;
-      }).toList();
-      
-      if (newQueue.isNotEmpty) {
-        state = state.copyWith(
-          requestQueue: newQueue,
-          requestRecords: updatedRecords,
-          currentStatus: InterceptStatus.blocked,
-          currentJsonText: newQueue.first.jsonData,
-        );
-      } else {
-        state = state.copyWith(
-          requestQueue: [],
-          requestRecords: updatedRecords,
-          currentStatus: InterceptStatus.waiting,
-          currentJsonText: '',
-        );
-      }
-    }
-  }
-
-  void navigateToDeviceDiscovery() {
+  void switchDevice() {
     RouterUtil.goToDeviceDiscovery();
   }
 }

@@ -137,7 +137,7 @@ class _RequestListPageState extends ConsumerState<RequestListPage> {
   @override
   Widget build(BuildContext context) {
     // 临时使用模拟数据渲染
-    final records = ref.watch(homeViewModelProvider).requestRecords;
+    final records = ref.watch(responseEditViewModelProvider).requestRecords;
     // final records = _mockRecords;
 
     // 当有新记录时，自动滚动到底部

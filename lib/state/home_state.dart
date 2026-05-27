@@ -1,68 +1,15 @@
-import 'dart:async';
-import '../model/request_record.dart';
-
-/// 拦截状态枚举
-enum InterceptStatus {
-  waiting,    // 等待拦截请求
-  blocked,    // 已拦截正在处理
-  released,   // 已放行
+// 拦截器模式
+enum InterceptorMode{
+  edit,
+  mock
 }
 
-/// 拦截任务类
-class InterceptTask {
-  final String requestId;
-  final String jsonData;
-  final Completer<Map<String, dynamic>> completer;
-
-  InterceptTask(this.requestId, this.jsonData, this.completer);
-}
-
-/// 首页状态类
+// 首页状态类
 class HomeState {
-  final bool isIntercepting;
-  final List<RequestRecord> requestRecords;
-  final List<InterceptTask> requestQueue;
-  final InterceptStatus currentStatus;
-  final String currentJsonText;
-  final int recordCounter;
-
-  HomeState({
-    required this.isIntercepting,
-    required this.requestRecords,
-    required this.requestQueue,
-    required this.currentStatus,
-    required this.currentJsonText,
-    required this.recordCounter,
-  });
-
-  /// 初始状态
-  factory HomeState.initial() {
-    return HomeState(
-      isIntercepting: false,
-      requestRecords: [],
-      requestQueue: [],
-      currentStatus: InterceptStatus.waiting,
-      currentJsonText: '',
-      recordCounter: 0,
-    );
-  }
-
-  /// 创建副本
-  HomeState copyWith({
-    bool? isIntercepting,
-    List<RequestRecord>? requestRecords,
-    List<InterceptTask>? requestQueue,
-    InterceptStatus? currentStatus,
-    String? currentJsonText,
-    int? recordCounter,
-  }) {
-    return HomeState(
-      isIntercepting: isIntercepting ?? this.isIntercepting,
-      requestRecords: requestRecords ?? this.requestRecords,
-      requestQueue: requestQueue ?? this.requestQueue,
-      currentStatus: currentStatus ?? this.currentStatus,
-      currentJsonText: currentJsonText ?? this.currentJsonText,
-      recordCounter: recordCounter ?? this.recordCounter,
-    );
+  final InterceptorMode interceptorMode;
+  HomeState({required this.interceptorMode});
+  factory HomeState.initial() => HomeState(interceptorMode: InterceptorMode.edit);
+  HomeState copyWith({InterceptorMode? interceptorMode}){
+    return HomeState(interceptorMode: interceptorMode ?? this.interceptorMode);
   }
 }

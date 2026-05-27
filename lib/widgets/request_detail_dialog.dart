@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/json.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
-import 'package:remote_interceptor/providers/providers.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
 
@@ -385,7 +384,7 @@ class _RequestDetailDialogState extends ConsumerState<RequestDetailDialog> {
       final modifiedData = json.decode(_controller.text) as Map<String, dynamic>;
 
       // 调用 ViewModel 放行
-      final notifier = ref.read(homeViewModelProvider.notifier);
+      final notifier = ref.read(responseEditViewModelProvider.notifier);
       notifier.releaseRequestById(widget.record.id, modifiedData);
 
       // 关闭弹窗
