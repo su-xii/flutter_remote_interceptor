@@ -59,7 +59,20 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
       mockData: mockData,
       enabled: enabled,
     );
-    final newRules = List<MockRule>.from(state.mockRules)..add(newRule);
+    
+    List<MockRule> newRules;
+    if (enabled) {
+      newRules = state.mockRules.map((rule) {
+        if (rule.url == url && rule.method == method) {
+          return rule.copyWith(enabled: false);
+        }
+        return rule;
+      }).toList();
+    } else {
+      newRules = List.from(state.mockRules);
+    }
+    
+    newRules.add(newRule);
     state = state.copyWith(mockRules: newRules);
     await _mockRuleStore.save(newRules);
   }
@@ -71,17 +84,37 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
     required String mockData,
     required bool enabled,
   }) async {
-    final newRules = state.mockRules.map((rule) {
-      if (rule.id == id) {
-        return rule.copyWith(
-          url: url,
-          method: method,
-          mockData: mockData,
-          enabled: enabled,
-        );
-      }
-      return rule;
-    }).toList();
+    List<MockRule> newRules;
+    
+    if (enabled) {
+      newRules = state.mockRules.map((rule) {
+        if (rule.id == id) {
+          return rule.copyWith(
+            url: url,
+            method: method,
+            mockData: mockData,
+            enabled: enabled,
+          );
+        }
+        if (rule.url == url && rule.method == method) {
+          return rule.copyWith(enabled: false);
+        }
+        return rule;
+      }).toList();
+    } else {
+      newRules = state.mockRules.map((rule) {
+        if (rule.id == id) {
+          return rule.copyWith(
+            url: url,
+            method: method,
+            mockData: mockData,
+            enabled: enabled,
+          );
+        }
+        return rule;
+      }).toList();
+    }
+    
     state = state.copyWith(mockRules: newRules);
     await _mockRuleStore.save(newRules);
   }
@@ -93,12 +126,30 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
   }
 
   Future<void> toggleRule(String id) async {
-    final newRules = state.mockRules.map((rule) {
-      if (rule.id == id) {
-        return rule.copyWith(enabled: !rule.enabled);
-      }
-      return rule;
-    }).toList();
+    final targetRule = state.mockRules.firstWhere((rule) => rule.id == id);
+    final willBeEnabled = !targetRule.enabled;
+    
+    List<MockRule> newRules;
+    
+    if (willBeEnabled) {
+      newRules = state.mockRules.map((rule) {
+        if (rule.id == id) {
+          return rule.copyWith(enabled: true);
+        }
+        if (rule.url == targetRule.url && rule.method == targetRule.method) {
+          return rule.copyWith(enabled: false);
+        }
+        return rule;
+      }).toList();
+    } else {
+      newRules = state.mockRules.map((rule) {
+        if (rule.id == id) {
+          return rule.copyWith(enabled: false);
+        }
+        return rule;
+      }).toList();
+    }
+    
     state = state.copyWith(mockRules: newRules);
     await _mockRuleStore.save(newRules);
   }

@@ -5,6 +5,7 @@ import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
 import 'package:remote_interceptor/dialog/request_detail_dialog.dart';
+import 'package:remote_interceptor/widgets/context_menu.dart';
 
 /// 请求记录列表页面
 class RequestListPage extends ConsumerStatefulWidget {
@@ -236,158 +237,194 @@ class _RequestRecordItem extends ConsumerWidget {
     required this.onTap,
   });
 
+  List<ContextMenuItem> _getMenuItems(BuildContext context, WidgetRef ref) {
+    final items = <ContextMenuItem>[];
+
+    if (record.state == InterceptState.interceptedPending) {
+      items.add(ContextMenuItem(
+        label: '放行',
+        icon: Icons.play_arrow,
+        onTap: () {
+          ref
+              .read(responseEditViewModelProvider.notifier)
+              .releaseRequestById(record.id, record.originalData);
+        },
+      ));
+    }
+
+    items.add(ContextMenuItem(
+      label: '添加到 Mock',
+      icon: Icons.add,
+      onTap: () {
+        final mockData = record.modifiedData ?? record.originalData;
+        final mockDataStr = mockData['data']?.toString() ?? '{}';
+        ref.read(mockResponseViewModelProvider.notifier).addRule(
+              url: record.url,
+              method: record.method,
+              mockData: mockDataStr,
+              enabled: true,
+            );
+      },
+    ));
+
+    return items;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = ref.watch(themeProvider);
     final methodColor = _getMethodColor(record.method);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: colors.bgCard,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
+    return ContextMenu(
+      getMenuItems: () => _getMenuItems(context, ref),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: colors.bgCard,
           borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 6,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // HTTP 方法标签
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: methodColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        _getMethodLabel(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: methodColor,
-                        ),
-                      ),
-                    ),
-                    // 拦截状态
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: methodColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        switch(record.state){
-                          InterceptState.notIntercepted => "未拦截",
-                          InterceptState.interceptedPending => "拦截中",
-                          InterceptState.interceptedProcessed => "已处理",
-                        },
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: methodColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                // 中间内容区域
-                Expanded(
-                  child: Column(
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 6,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                    // URL
-                    Text(
-                      _truncateUrl(record.url),
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: colors.textPrimary,
-                        height: 1.4,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    // 底部信息
-                    Row(
-                      children: [
-                      // 时间
-                      Text(
-                        _formatTime(record.timestamp),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colors.textSecondary.withOpacity(0.8),
-                        ),
-                      ),
-                      // 分隔符
+                      // HTTP 方法标签
                       Container(
-                        width: 4,
-                        height: 4,
-                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        margin: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: colors.textSecondary.withOpacity(0.3),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      // 状态码
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _getStatusCodeColor(colors).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(3),
+                          color: methodColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '${record.statusCode}',
+                          _getMethodLabel(),
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _getStatusCodeColor(colors),
+                            fontWeight: FontWeight.w700,
+                            color: methodColor,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      // 内容类型
-                      Text(
-                        record.contentType,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colors.textSecondary.withOpacity(0.8),
+                      // 拦截状态
+                      Container(
+                        margin: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: methodColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      // 响应时间
-                      Text(
-                        '${record.duration}ms',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colors.textSecondary.withOpacity(0.8),
+                        child: Text(
+                          switch(record.state){
+                            InterceptState.notIntercepted => "未拦截",
+                            InterceptState.interceptedPending => "拦截中",
+                            InterceptState.interceptedProcessed => "已处理",
+                          },
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: methodColor,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ],
+                  const SizedBox(width: 12),
+                  // 中间内容区域
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                      // URL
+                      Text(
+                        _truncateUrl(record.url),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: colors.textPrimary,
+                          height: 1.4,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      // 底部信息
+                      Row(
+                        children: [
+                        // 时间
+                        Text(
+                          _formatTime(record.timestamp),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textSecondary.withOpacity(0.8),
+                          ),
+                        ),
+                        // 分隔符
+                        Container(
+                          width: 4,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          decoration: BoxDecoration(
+                            color: colors.textSecondary.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        // 状态码
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _getStatusCodeColor(colors).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            '${record.statusCode}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _getStatusCodeColor(colors),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // 内容类型
+                        Text(
+                          record.contentType,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textSecondary.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // 响应时间
+                        Text(
+                          '${record.duration}ms',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textSecondary.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            // 右侧箭头
-            const SizedBox(width: 12),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: colors.textSecondary.withOpacity(0.4),
-            ),
-          ],
+              // 右侧箭头
+              const SizedBox(width: 12),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: colors.textSecondary.withOpacity(0.4),
+              ),
+            ],
+          ),
         ),
       ),
     )));
