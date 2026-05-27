@@ -328,6 +328,7 @@ class _DeviceDiscoveryPageState extends ConsumerState<DeviceDiscoveryPage> {
       ),
       backgroundColor: Colors.transparent,
       child: Container(
+        width: 300,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: kBgCard,

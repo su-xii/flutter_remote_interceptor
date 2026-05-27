@@ -1,28 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:remote_interceptor/server/remote_server.dart';
 import 'package:remote_interceptor/model/request_record.dart';
-import 'package:remote_interceptor/router/router_util.dart';
 
 import '../state/response_edit_state.dart';
 
 
 class ResponseEditViewModel extends StateNotifier<ResponseEditState> {
 
-  final RemoteServer _remoteServer;
-  ResponseEditViewModel(this._remoteServer):super(ResponseEditState.initial()){
-    _remoteServer.requestHandler = _handleRequest;
-  }
+  ResponseEditViewModel():super(ResponseEditState.initial());
 
 
-  @override
-  void dispose() {
-    _remoteServer.requestHandler = null;
-    super.dispose();
-  }
-
-  Future<Map<String, dynamic>> _handleRequest(Map<String, dynamic> requestData) async {
+  Future<Map<String, dynamic>> handleRequest(Map<String, dynamic> requestData) async {
     state = state.copyWith(
       recordCounter: state.recordCounter + 1,
     );
