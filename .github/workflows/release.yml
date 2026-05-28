@@ -1,3 +1,13 @@
+name: Build and Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "v*"
 jobs:
   build:
     name: ${{ matrix.build }}-build
