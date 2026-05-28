@@ -25,6 +25,7 @@ class ResponseEditViewModel extends StateNotifier<ResponseEditState> {
       originalData: Map<String, dynamic>.from(requestData),
       timestamp: DateTime.now(),
       state: state.isIntercepting ? InterceptState.interceptedPending : InterceptState.notIntercepted,
+      duration: requestData['requestTime'],
       url: requestData['requestOptions']['uri'] ?? 'unknown',
       method: requestData['requestOptions']['method'] ?? 'unknown',
       statusCode: requestData['statusCode']
