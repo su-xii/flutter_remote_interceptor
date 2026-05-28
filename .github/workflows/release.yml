@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build: [ windows]
+        build: [linux, macos, windows]
         include:
           - build: linux
             os: ubuntu-latest
@@ -26,7 +26,7 @@ jobs:
             flutter-version: "3.27.0"
             archive-name: flutter-app-macos.tar.gz
           - build: windows
-            os: windows-2022  # 改用 windows-2022
+            os: windows-latest  # 回到 windows-latest
             flutter-version: "3.27.0"
             archive-name: flutter-app-windows.zip
       fail-fast: false
@@ -39,13 +39,17 @@ jobs:
           fetch-depth: 0
 
       # ==========================
-      # Windows 专用：设置 Visual Studio 环境
+      # Windows 专用：安装 Visual Studio Build Tools
       # ==========================
-      - name: Setup Visual Studio (Windows only)
+      - name: Install Visual Studio Build Tools (Windows only)
         if: matrix.build == 'windows'
-        uses: microsoft/setup-msbuild@v2
-        with:
-          vs-version: '2022'
+        run: |
+          # 使用 Chocolatey 安装 Visual Studio Build Tools 2022
+          choco install visualstudio2022buildtools -y --no-progress
+          choco install visualstudio2022-workload-vctools -y --no-progress
+          choco install cmake -y --no-progress
+          choco install ninja -y --no-progress
+        shell: powershell
 
       # 设置 MSVC 环境变量
       - name: Setup MSVC Environment (Windows only)
@@ -65,7 +69,7 @@ jobs:
           cache: true
 
       # ==========================
-      # Windows 专用：启用桌面支持和修复工具链
+      # Windows 专用：启用桌面支持
       # ==========================
       - name: Configure Windows Build Environment
         if: matrix.build == 'windows'
@@ -79,12 +83,6 @@ jobs:
           # 清理之前的构建
           if (Test-Path "build/windows") {
             Remove-Item -Recurse -Force "build/windows"
-          }
-          
-          # 重新生成 Windows 文件夹（如果存在）
-          if (Test-Path "windows") {
-            Remove-Item -Recurse -Force "windows"
-            flutter create --platforms=windows .
           }
         shell: powershell
 
@@ -110,14 +108,13 @@ jobs:
       # ==========================
       - name: Build Flutter App
         env:
-          # 强制使用正确的 Visual Studio 版本
+          # 强制使用正确的构建工具
           VisualStudioVersion: '17.0'
           CMAKE_GENERATOR: 'Visual Studio 17 2022'
           CMAKE_GENERATOR_PLATFORM: x64
-          VSCMD_ARG_TGT_ARCH: x64
         run: |
           if ("${{ matrix.build }}" -eq "windows") {
-            flutter build windows --release --verbose
+            flutter build windows --release
           } elseif ("${{ matrix.build }}" -eq "macos") {
             flutter build macos --release
           } else {
@@ -138,11 +135,11 @@ jobs:
             windows)
               BUILD_PATH="../build/windows/x64/runner/Release"
               if [ -d "$BUILD_PATH" ]; then
-                cp -r "$BUILD_PATH" "./flutter_app"
+                mkdir -p flutter_app
+                cp -r "$BUILD_PATH"/* "./flutter_app/"
                 echo "✅ Copied Windows build"
               else
                 echo "❌ Build path not found: $BUILD_PATH"
-                echo "Available build directories:"
                 ls -la ../build/windows/x64/runner/ 2>/dev/null || echo "No build found"
                 exit 1
               fi
