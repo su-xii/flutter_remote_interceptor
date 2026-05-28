@@ -40,22 +40,26 @@ jobs:
           fetch-depth: 0
 
       # ==========================
-      # 2. 设置 FVM 和 Flutter
+      # 2. 设置 Flutter
       # ==========================
-      - name: Setup Flutter with FVM
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ matrix.flutter-version }}
           cache: true
 
-      - name: Enable FVM
-        run: flutter pub global activate fvm
-
-      - name: Setup FVM Cache
+      # 可选：如果项目使用了 FVM 配置文件，可以读取版本号但不安装
+      - name: Read FVM config (optional)
+        if: hashFiles('.fvm/flutter_sdk') != ''
         run: |
-          fvm config --cache-path ./.fvm_cache
-          fvm install ${{ matrix.flutter-version }}
-          fvm use ${{ matrix.flutter-version }} --force
+          FVM_VERSION=$(cat .fvm/flutter_sdk | tr -d '\n')
+          echo "Project uses FVM with Flutter version: $FVM_VERSION"
+          # 可选：验证版本是否匹配
+          CURRENT_VERSION=$(flutter --version | head -n 1 | grep -oP 'Flutter \K[\d.]+')
+          if [ "$CURRENT_VERSION" != "$FVM_VERSION" ]; then
+            echo "⚠️ Warning: Current Flutter version ($CURRENT_VERSION) doesn't match FVM version ($FVM_VERSION)"
+          fi
+        shell: bash
 
       # ==========================
       # 3. 安装依赖 (Linux)
@@ -119,6 +123,20 @@ jobs:
               ;;
           esac
 
+          # 复制启动脚本（如果有）
+          if [ -f "../run.sh" ]; then
+            cp ../run.sh ./
+            chmod +x run.sh
+          elif [ -f "../run.bat" ]; then
+            cp ../run.bat ./
+          fi
+
+          # 复制配置文件（如果有）
+          if [ -f "../config.toml" ]; then
+            cp ../config.toml ./
+          elif [ -f "../config.yaml" ]; then
+            cp ../config.yaml ./
+          fi
 
           # 复制 README
           if [ -f "../README.md" ]; then
