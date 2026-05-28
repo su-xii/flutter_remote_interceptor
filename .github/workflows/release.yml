@@ -1,48 +1,34 @@
-name: Build Windows App (Simplified)
+name: Quick Windows Test
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: windows-2022
+  test:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
 
-      # 关键：设置 VS 环境
-      - name: Setup Visual Studio
-        uses: egor-tensin/vs-shell@v2
-        with:
-          arch: x64
-
-      # 安装 Flutter
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.4'
-          channel: 'stable'
-
-      # 验证环境
-      - name: Check environment
+      - name: Install Flutter
         run: |
-          flutter doctor -v
-          cmake --version
-          where cl
-        shell: cmd
+          git clone https://github.com/flutter/flutter.git --depth 1 -b stable C:\flutter
+          echo "C:\flutter\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        shell: powershell
 
-      # 构建
+      - name: Flutter Doctor
+        run: flutter doctor -v
+        shell: powershell
+
+      - name: Enable Windows
+        run: flutter config --enable-windows-desktop
+        shell: powershell
+
       - name: Build
         run: flutter build windows --release
+        shell: powershell
 
-      # 打包
-      - name: Package
-        run: |
-          mkdir release
-          xcopy /E /I "build\windows\x64\runner\Release" "release\flutter_app"
-          cd release
-          tar -czf ../flutter-app-windows.tar.gz .
-
-      - uses: actions/upload-artifact@v4
+      - name: Upload
+        uses: actions/upload-artifact@v4
         with:
-          name: windows-build
-          path: flutter-app-windows.tar.gz
+          name: windows-app
+          path: build/windows/x64/runner/Release/
