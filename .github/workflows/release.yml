@@ -1,44 +1,79 @@
-name: Quick Windows Test
+name: Build and Release
+
+permissions:
+  contents: write
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "v*"
 
 jobs:
-  test:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v5
+  build:
+    name: ${{ matrix.build }}-build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [linux, macos, windows]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            flutter-version: "3.27.0"
+            archive-name: flutter-app-linux.tar.gz
+          - build: macos
+            os: macos-latest
+            flutter-version: "3.27.0"
+            archive-name: flutter-app-macos.tar.gz
+          - build: windows
+            os: windows-latest
+            flutter-version: "3.27.0"
+            archive-name: flutter-app-windows.zip
+      fail-fast: false
 
-      # 安装 Visual Studio 2019 Build Tools
-      - name: Install Visual Studio 2019
+    steps:
+      # 1. 检出代码
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      # ==========================
+      # Windows 专用：安装 VS 2019 Build Tools
+      # ==========================
+      - name: Install Visual Studio 2019 (Windows only)
+        if: matrix.build == 'windows'
         run: |
           choco install visualstudio2019buildtools -y --no-progress
           choco install visualstudio2019-workload-vctools -y --no-progress
         shell: powershell
 
-      # 设置 VS 2019 环境变量
-      - name: Setup VS 2019 Environment
+      - name: Setup VS 2019 Environment (Windows only)
+        if: matrix.build == 'windows'
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
           vsversion: '2019'
 
-      - name: Install Flutter
-        run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 -b 3.27.0 C:\flutter
-          echo "C:\flutter\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-        shell: powershell
+      # ==========================
+      # 设置 Flutter
+      # ==========================
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          cache: true
 
-      - name: Flutter Doctor
-        run: flutter doctor -v
-        shell: powershell
-
-      - name: Enable Windows
+      # ==========================
+      # Windows 专用：启用桌面支持和修复 CMake
+      # ==========================
+      - name: Enable Windows Desktop Support
+        if: matrix.build == 'windows'
         run: flutter config --enable-windows-desktop
-        shell: powershell
 
-      # 修改 CMakeLists.txt 确保使用 VS 2019
-      - name: Fix CMake configuration
+      - name: Fix CMake configuration (Windows only)
+        if: matrix.build == 'windows'
         run: |
           $cmakeFile = "windows/CMakeLists.txt"
           if (Test-Path $cmakeFile) {
@@ -47,14 +82,137 @@ jobs:
           }
         shell: powershell
 
-      - name: Build
-        run: flutter build windows --release
-        env:
-          VisualStudioVersion: '16.0'
-        shell: powershell
+      # ==========================
+      # Linux 专用：安装依赖
+      # ==========================
+      - name: Install Linux Dependencies
+        if: matrix.build == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev
 
-      - name: Upload
+      # ==========================
+      # 安装 Flutter 依赖
+      # ==========================
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      # ==========================
+      # 构建 Flutter 应用
+      # ==========================
+      - name: Build Flutter App
+        env:
+          VisualStudioVersion: ${{ matrix.build == 'windows' && '16.0' || '' }}
+        run: |
+          case "${{ matrix.build }}" in
+            windows)
+              flutter build windows --release
+              ;;
+            macos)
+              flutter build macos --release
+              ;;
+            linux)
+              flutter build linux --release
+              ;;
+          esac
+        shell: bash
+
+      # ==========================
+      # 打包归档
+      # ==========================
+      - name: Package Artifacts
+        shell: bash
+        run: |
+          mkdir -p archive
+          cd archive
+
+          case "${{ matrix.build }}" in
+            windows)
+              BUILD_PATH="../build/windows/x64/runner/Release"
+              if [ -d "$BUILD_PATH" ]; then
+                mkdir -p flutter_app
+                cp -r "$BUILD_PATH"/* "./flutter_app/"
+                echo "✅ Copied Windows build"
+              else
+                echo "❌ Build path not found: $BUILD_PATH"
+                ls -la ../build/windows/x64/runner/ 2>/dev/null || echo "No build found"
+                exit 1
+              fi
+              ;;
+            macos)
+              BUILD_PATH="../build/macos/Build/Products/Release"
+              APP_NAME="*.app"
+              cp -r $BUILD_PATH/$APP_NAME ./
+              ;;
+            linux)
+              BUILD_PATH="../build/linux/x64/release/bundle"
+              BUNDLE_NAME="flutter_app"
+              cp -r "$BUILD_PATH" "./$BUNDLE_NAME"
+              ;;
+          esac
+
+          # 复制启动脚本（如果有）
+          if [ -f "../run.sh" ]; then
+            cp ../run.sh ./
+            chmod +x run.sh
+          elif [ -f "../run.bat" ]; then
+            cp ../run.bat ./
+          fi
+
+          # 复制配置文件（如果有）
+          if [ -f "../config.toml" ]; then
+            cp ../config.toml ./
+          elif [ -f "../config.yaml" ]; then
+            cp ../config.yaml ./
+          fi
+
+          # 复制 README
+          if [ -f "../README.md" ]; then
+            cp ../README.md ./
+          fi
+
+          echo "📦 Creating archive: ${{ matrix.archive-name }}"
+          
+          if [ "${{ matrix.build }}" = "windows" ]; then
+            zip -r "${{ matrix.archive-name }}" ./*
+          else
+            tar -czf "${{ matrix.archive-name }}" ./*
+          fi
+
+          echo "✅ Archive created successfully."
+          ls -lh
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-app
-          path: build/windows/x64/runner/Release/
+          name: ${{ matrix.archive-name }}
+          path: archive/${{ matrix.archive-name }}
+          retention-days: 5
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: downloaded_artifacts
+
+      - name: List downloaded files
+        run: ls -R downloaded_artifacts
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: downloaded_artifacts/**/*.tar.gz, downloaded_artifacts/**/*.zip
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
