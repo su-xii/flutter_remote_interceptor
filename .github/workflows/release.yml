@@ -11,7 +11,7 @@ jobs:
 
       - name: Install Flutter
         run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 -b stable C:\flutter
+          git clone https://github.com/flutter/flutter.git --depth 1 -b 3.27.0 C:\flutter
           echo "C:\flutter\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
         shell: powershell
 
