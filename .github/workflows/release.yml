@@ -176,7 +176,7 @@ jobs:
           echo "📦 Creating archive: ${{ matrix.archive-name }}"
           
           if [ "${{ matrix.build }}" = "windows" ]; then
-            zip -r "${{ matrix.archive-name }}" ./*
+            powershell -Command "Compress-Archive -Path * -DestinationPath ${{ matrix.archive-name }} -Force"
           else
             tar -czf "${{ matrix.archive-name }}" ./*
           fi
