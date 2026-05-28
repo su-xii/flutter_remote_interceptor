@@ -28,7 +28,6 @@ class MockRule {
       mockData: json['mockData'],
       enabled: json['enabled'] ?? false,
       remark: json['remark'],
-      hitCount: json['hitCount'] ?? 0,
     );
   }
 
@@ -40,7 +39,6 @@ class MockRule {
       'mockData': mockData,
       'enabled': enabled,
       'remark': remark,
-      'hitCount': hitCount,
     };
   }
 
