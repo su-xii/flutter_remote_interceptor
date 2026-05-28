@@ -1,36 +1,17 @@
-name: Build and Release
+name: Build Windows App
 
 permissions:
   contents: write
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch: {}  # 手动触发
   push:
     tags:
       - "v*"
 
 jobs:
-  build:
-    name: ${{ matrix.build }}-build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        build: [linux, macos, windows]
-        include:
-          - build: linux
-            os: ubuntu-latest
-            flutter-version: "3.27.0"
-            archive-name: flutter-app-linux.tar.gz
-          - build: macos
-            os: macos-latest
-            flutter-version: "3.27.0"
-            archive-name: flutter-app-macos.tar.gz
-          - build: windows
-            os: windows-latest  # 回到 windows-latest
-            flutter-version: "3.27.0"
-            archive-name: flutter-app-windows.zip
-      fail-fast: false
-
+  build-windows:
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -38,169 +19,53 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      # ==========================
-      # Windows 专用：安装 Visual Studio Build Tools
-      # ==========================
-      - name: Install Visual Studio Build Tools (Windows only)
-        if: matrix.build == 'windows'
-        run: |
-          # 使用 Chocolatey 安装 Visual Studio Build Tools 2022
-          choco install visualstudio2022buildtools -y --no-progress
-          choco install visualstudio2022-workload-vctools -y --no-progress
-          choco install cmake -y --no-progress
-          choco install ninja -y --no-progress
-        shell: powershell
-
-      # 设置 MSVC 环境变量
-      - name: Setup MSVC Environment (Windows only)
-        if: matrix.build == 'windows'
-        uses: ilammy/msvc-dev-cmd@v1
+      # 设置 Visual Studio 2022 环境
+      - name: Setup Visual Studio
+        uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
-          vsversion: '2022'
+          vs_version: '2022'
 
-      # ==========================
-      # 设置 Flutter
-      # ==========================
+      # 安装 Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ matrix.flutter-version }}
+          flutter-version: "3.22.4"  # 使用更稳定的版本，如果3.27不行可以改这个
           cache: true
 
-      # ==========================
-      # Windows 专用：启用桌面支持
-      # ==========================
-      - name: Configure Windows Build Environment
-        if: matrix.build == 'windows'
+      # 启用 Windows 桌面支持
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      # 修改 CMakeLists.txt 使用 VS 2022
+      - name: Fix CMake configuration
         run: |
-          # 启用 Windows 桌面支持
-          flutter config --enable-windows-desktop
-          
-          # 显示 Flutter doctor 信息用于调试
-          flutter doctor -v
-          
-          # 清理之前的构建
-          if (Test-Path "build/windows") {
-            Remove-Item -Recurse -Force "build/windows"
+          $cmakeFile = "windows/CMakeLists.txt"
+          if (Test-Path $cmakeFile) {
+            (Get-Content $cmakeFile) -replace 'Visual Studio 16 2019', 'Visual Studio 17 2022' | Set-Content $cmakeFile
+            Write-Host "✅ Updated CMakeLists.txt"
           }
         shell: powershell
 
-      # ==========================
-      # 安装 Linux 依赖
-      # ==========================
-      - name: Install Linux Dependencies
-        if: matrix.build == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            clang cmake ninja-build pkg-config \
-            libgtk-3-dev liblzma-dev libstdc++-12-dev
-
-      # ==========================
-      # 安装 Flutter 依赖
-      # ==========================
-      - name: Install Flutter Dependencies
+      # 安装依赖
+      - name: Install Dependencies
         run: flutter pub get
 
-      # ==========================
-      # 构建 Flutter 应用
-      # ==========================
-      - name: Build Flutter App
+      # 构建
+      - name: Build Windows App
+        run: flutter build windows --release
         env:
-          # 强制使用正确的构建工具
           VisualStudioVersion: '17.0'
-          CMAKE_GENERATOR: 'Visual Studio 17 2022'
-          CMAKE_GENERATOR_PLATFORM: x64
+
+      # 打包
+      - name: Package
         run: |
-          if ("${{ matrix.build }}" -eq "windows") {
-            flutter build windows --release
-          } elseif ("${{ matrix.build }}" -eq "macos") {
-            flutter build macos --release
-          } else {
-            flutter build linux --release
-          }
-        shell: powershell
+          Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "flutter-app-windows.zip"
+          Write-Host "✅ Build complete: flutter-app-windows.zip"
 
-      # ==========================
-      # 打包归档
-      # ==========================
-      - name: Package Artifacts
-        shell: bash
-        run: |
-          mkdir -p archive
-          cd archive
-
-          case "${{ matrix.build }}" in
-            windows)
-              BUILD_PATH="../build/windows/x64/runner/Release"
-              if [ -d "$BUILD_PATH" ]; then
-                mkdir -p flutter_app
-                cp -r "$BUILD_PATH"/* "./flutter_app/"
-                echo "✅ Copied Windows build"
-              else
-                echo "❌ Build path not found: $BUILD_PATH"
-                ls -la ../build/windows/x64/runner/ 2>/dev/null || echo "No build found"
-                exit 1
-              fi
-              ;;
-            macos)
-              BUILD_PATH="../build/macos/Build/Products/Release"
-              APP_NAME="*.app"
-              cp -r $BUILD_PATH/$APP_NAME ./
-              ;;
-            linux)
-              BUILD_PATH="../build/linux/x64/release/bundle"
-              BUNDLE_NAME="flutter_app"
-              cp -r "$BUILD_PATH" "./$BUNDLE_NAME"
-              ;;
-          esac
-
-          # 复制 README
-          if [ -f "../README.md" ]; then
-            cp ../README.md ./
-          fi
-
-          echo "📦 Creating archive: ${{ matrix.archive-name }}"
-          
-          if [ "${{ matrix.build }}" = "windows" ]; then
-            zip -r "${{ matrix.archive-name }}" ./*
-          else
-            tar -czf "${{ matrix.archive-name }}" ./*
-          fi
-
-          echo "✅ Archive created successfully."
-          ls -lh
-
+      # 上传
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.archive-name }}
-          path: archive/${{ matrix.archive-name }}
-          retention-days: 5
-
-  release:
-    name: Create Release
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v5
-        with:
-          path: downloaded_artifacts
-
-      - name: List downloaded files
-        run: ls -R downloaded_artifacts
-
-      - name: Upload to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        with:
-          files: downloaded_artifacts/**/*.tar.gz, downloaded_artifacts/**/*.zip
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: windows-build
+          path: flutter-app-windows.zip
