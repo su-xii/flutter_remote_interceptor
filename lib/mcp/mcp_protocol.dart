@@ -2,7 +2,7 @@ class JsonRpcRequest {
   final String jsonrpc = '2.0';
   final String method;
   final dynamic params;
-  final String? id;
+  final dynamic id;
 
   JsonRpcRequest({
     required this.method,
@@ -14,16 +14,18 @@ class JsonRpcRequest {
     return JsonRpcRequest(
       method: json['method'] as String,
       params: json['params'],
-      id: json['id']?.toString(),
+      id: json['id'],
     );
   }
+
+  bool get isNotification => id == null;
 }
 
 class JsonRpcResponse {
   final String jsonrpc = '2.0';
   final dynamic result;
   final JsonRpcError? error;
-  final String? id;
+  final dynamic id;
 
   JsonRpcResponse.success({required this.result, this.id}) : error = null;
 

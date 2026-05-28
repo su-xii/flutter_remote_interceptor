@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/mcp/mcp_protocol.dart';
 import 'package:remote_interceptor/mcp/mcp_tools.dart';
@@ -7,6 +9,8 @@ import 'package:remote_interceptor/mcp/mcp_tools.dart';
 class MCPServer {
   final Ref ref;
   HttpServer? _server;
+  final List<HttpResponse> _openSseClients = [];
+
   static const int defaultPort = 8765;
 
   MCPServer(this.ref);
@@ -21,27 +25,40 @@ class MCPServer {
         InternetAddress.loopbackIPv4,
         port,
       );
-      
-      print('MCP Server started on http://127.0.0.1:$port');
-      
+
+      debugPrint('MCP Server started on http://127.0.0.1:$port');
+
       await for (final request in _server!) {
         _handleRequest(request);
       }
     } catch (e) {
-      print('Failed to start MCP Server: $e');
+      debugPrint('Failed to start MCP Server: $e');
       rethrow;
     }
   }
 
   Future<void> stop() async {
+    for (final response in List<HttpResponse>.from(_openSseClients)) {
+      try {
+        await response.close();
+      } catch (_) {
+        // Ignore sockets that are already closed.
+      }
+    }
+    _openSseClients.clear();
+
     await _server?.close(force: true);
     _server = null;
-    print('MCP Server stopped');
+    debugPrint('MCP Server stopped');
   }
 
   void _handleRequest(HttpRequest request) async {
     try {
-      if (request.method == 'POST' && request.uri.path == '/mcp') {
+      if (request.uri.path != '/mcp') {
+        await _handleNotFound(request);
+      } else if (request.method == 'GET') {
+        await _handleSseStream(request);
+      } else if (request.method == 'POST') {
         await _handleJsonRpcRequest(request);
       } else {
         await _handleNotFound(request);
@@ -55,8 +72,15 @@ class MCPServer {
     try {
       final body = await utf8.decodeStream(request);
       final json = jsonDecode(body) as Map<String, dynamic>;
-      
+
       final rpcRequest = JsonRpcRequest.fromJson(json);
+
+      if (rpcRequest.isNotification) {
+        request.response.statusCode = HttpStatus.accepted;
+        await request.response.close();
+        return;
+      }
+
       final tools = MCPTools(ref);
 
       dynamic result;
@@ -73,9 +97,9 @@ class MCPServer {
           ),
           id: rpcRequest.id,
         ).toJson();
-        
+
         request.response
-          ..statusCode = 200
+          ..statusCode = HttpStatus.ok
           ..headers.contentType = ContentType.json
           ..write(jsonEncode(response));
         await request.response.close();
@@ -88,7 +112,7 @@ class MCPServer {
       ).toJson();
 
       request.response
-        ..statusCode = 200
+        ..statusCode = HttpStatus.ok
         ..headers.contentType = ContentType.json
         ..write(jsonEncode(response));
       await request.response.close();
@@ -101,10 +125,31 @@ class MCPServer {
       ).toJson();
 
       request.response
-        ..statusCode = 200
+        ..statusCode = HttpStatus.badRequest
         ..headers.contentType = ContentType.json
         ..write(jsonEncode(response));
       await request.response.close();
+    }
+  }
+
+  Future<void> _handleSseStream(HttpRequest request) async {
+    request.response
+      ..statusCode = HttpStatus.ok
+      ..headers.contentType = ContentType('text', 'event-stream', charset: 'utf-8')
+      ..headers.set('Cache-Control', 'no-cache')
+      ..headers.set('Connection', 'keep-alive')
+      ..bufferOutput = false;
+
+    _openSseClients.add(request.response);
+
+    request.response.writeln(': connected');
+    request.response.writeln();
+    await request.response.flush();
+
+    try {
+      await request.response.done;
+    } finally {
+      _openSseClients.remove(request.response);
     }
   }
 
@@ -117,7 +162,7 @@ class MCPServer {
     ).toJson();
 
     request.response
-      ..statusCode = 404
+      ..statusCode = HttpStatus.notFound
       ..headers.contentType = ContentType.json
       ..write(jsonEncode(response));
     await request.response.close();
@@ -132,7 +177,7 @@ class MCPServer {
     ).toJson();
 
     request.response
-      ..statusCode = 500
+      ..statusCode = HttpStatus.internalServerError
       ..headers.contentType = ContentType.json
       ..write(jsonEncode(response));
     await request.response.close();
