@@ -1,0 +1,172 @@
+name: Build and Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: ${{ matrix.build }}-build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [linux, macos, windows]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            flutter-version: "3.27.0"  # 修改为你需要的 Flutter 版本
+            archive-name: flutter-app-linux.tar.gz
+          - build: macos
+            os: macos-latest
+            flutter-version: "3.27.0"
+            archive-name: flutter-app-macos.tar.gz
+          - build: windows
+            os: windows-latest
+            flutter-version: "3.27.0"
+            archive-name: flutter-app-windows.tar.gz
+      fail-fast: false
+
+    steps:
+      # 1. 检出代码
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      # ==========================
+      # 2. 设置 FVM 和 Flutter
+      # ==========================
+      - name: Setup Flutter with FVM
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          cache: true
+
+      - name: Enable FVM
+        run: flutter pub global activate fvm
+
+      - name: Setup FVM Cache
+        run: |
+          fvm config --cache-path ./.fvm_cache
+          fvm install ${{ matrix.flutter-version }}
+          fvm use ${{ matrix.flutter-version }} --force
+
+      # ==========================
+      # 3. 安装依赖 (Linux)
+      # ==========================
+      - name: Install Linux Dependencies
+        if: matrix.build == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+      # ==========================
+      # 4. 安装 Flutter 依赖
+      # ==========================
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      # ==========================
+      # 5. 构建 Flutter 应用
+      # ==========================
+      - name: Build Flutter App
+        run: |
+          case "${{ matrix.build }}" in
+            windows)
+              flutter build windows --release
+              ;;
+            macos)
+              flutter build macos --release
+              ;;
+            linux)
+              flutter build linux --release
+              ;;
+          esac
+        shell: bash
+
+      # ==========================
+      # 6. 打包归档 (Package)
+      # ==========================
+      - name: Package Artifacts
+        shell: bash
+        run: |
+          mkdir -p archive
+          cd archive
+
+          case "${{ matrix.build }}" in
+            windows)
+              BUILD_PATH="../build/windows/x64/runner/Release"
+              BUNDLE_NAME="flutter_app"
+              cp -r "$BUILD_PATH" "./$BUNDLE_NAME"
+              ;;
+            macos)
+              BUILD_PATH="../build/macos/Build/Products/Release"
+              APP_NAME="*.app"
+              cp -r $BUILD_PATH/$APP_NAME ./
+              ;;
+            linux)
+              BUILD_PATH="../build/linux/x64/release/bundle"
+              BUNDLE_NAME="flutter_app"
+              cp -r "$BUILD_PATH" "./$BUNDLE_NAME"
+              ;;
+          esac
+
+
+          # 复制 README
+          if [ -f "../README.md" ]; then
+            cp ../README.md ./
+          fi
+
+          echo "📦 Creating archive: ${{ matrix.archive-name }}"
+          
+          if [ "${{ matrix.build }}" = "windows" ]; then
+            # Windows 使用 zip（更兼容）
+            zip -r "${{ matrix.archive-name }}" ./*
+          else
+            # Linux/Mac 使用 tar.gz
+            tar -czf "${{ matrix.archive-name }}" ./*
+          fi
+
+          echo "✅ Archive created successfully."
+          ls -lh
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.archive-name }}
+          path: archive/${{ matrix.archive-name }}
+          retention-days: 5
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: downloaded_artifacts
+
+      - name: List downloaded files
+        run: ls -R downloaded_artifacts
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: downloaded_artifacts/**/*.tar.gz
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
