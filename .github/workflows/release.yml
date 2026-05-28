@@ -19,7 +19,7 @@ jobs:
         include:
           - build: linux
             os: ubuntu-latest
-            flutter-version: "3.27.0"  # 修改为你需要的 Flutter 版本
+            flutter-version: "3.27.0"
             archive-name: flutter-app-linux.tar.gz
           - build: macos
             os: macos-latest
@@ -28,7 +28,7 @@ jobs:
           - build: windows
             os: windows-latest
             flutter-version: "3.27.0"
-            archive-name: flutter-app-windows.tar.gz
+            archive-name: flutter-app-windows.zip  # Windows 使用 .zip
       fail-fast: false
 
     steps:
@@ -40,7 +40,21 @@ jobs:
           fetch-depth: 0
 
       # ==========================
-      # 2. 设置 Flutter
+      # 2. Windows 专用：安装 Visual Studio Build Tools
+      # ==========================
+      - name: Install Visual Studio Build Tools (Windows only)
+        if: matrix.build == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # 或者使用更完整的 Visual Studio 设置
+      - name: Setup Visual Studio (Alternative)
+        if: matrix.build == 'windows'
+        uses: microsoft/setup-msbuild@v2
+
+      # ==========================
+      # 3. 设置 Flutter
       # ==========================
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -48,21 +62,15 @@ jobs:
           flutter-version: ${{ matrix.flutter-version }}
           cache: true
 
-      # 可选：如果项目使用了 FVM 配置文件，可以读取版本号但不安装
-      - name: Read FVM config (optional)
-        if: hashFiles('.fvm/flutter_sdk') != ''
-        run: |
-          FVM_VERSION=$(cat .fvm/flutter_sdk | tr -d '\n')
-          echo "Project uses FVM with Flutter version: $FVM_VERSION"
-          # 可选：验证版本是否匹配
-          CURRENT_VERSION=$(flutter --version | head -n 1 | grep -oP 'Flutter \K[\d.]+')
-          if [ "$CURRENT_VERSION" != "$FVM_VERSION" ]; then
-            echo "⚠️ Warning: Current Flutter version ($CURRENT_VERSION) doesn't match FVM version ($FVM_VERSION)"
-          fi
-        shell: bash
+      # ==========================
+      # 4. 启用 Windows 桌面支持
+      # ==========================
+      - name: Enable Windows Desktop Support
+        if: matrix.build == 'windows'
+        run: flutter config --enable-windows-desktop
 
       # ==========================
-      # 3. 安装依赖 (Linux)
+      # 5. 安装依赖 (Linux)
       # ==========================
       - name: Install Linux Dependencies
         if: matrix.build == 'linux'
@@ -73,13 +81,13 @@ jobs:
             libgtk-3-dev liblzma-dev libstdc++-12-dev
 
       # ==========================
-      # 4. 安装 Flutter 依赖
+      # 6. 安装 Flutter 依赖
       # ==========================
       - name: Install Flutter Dependencies
         run: flutter pub get
 
       # ==========================
-      # 5. 构建 Flutter 应用
+      # 7. 构建 Flutter 应用
       # ==========================
       - name: Build Flutter App
         run: |
@@ -97,7 +105,7 @@ jobs:
         shell: bash
 
       # ==========================
-      # 6. 打包归档 (Package)
+      # 8. 打包归档 (Package)
       # ==========================
       - name: Package Artifacts
         shell: bash
@@ -108,8 +116,14 @@ jobs:
           case "${{ matrix.build }}" in
             windows)
               BUILD_PATH="../build/windows/x64/runner/Release"
-              BUNDLE_NAME="flutter_app"
-              cp -r "$BUILD_PATH" "./$BUNDLE_NAME"
+              if [ -d "$BUILD_PATH" ]; then
+                cp -r "$BUILD_PATH" "./flutter_app"
+                echo "✅ Copied Windows build"
+              else
+                echo "❌ Build path not found: $BUILD_PATH"
+                ls -la ../build/windows/x64/runner/
+                exit 1
+              fi
               ;;
             macos)
               BUILD_PATH="../build/macos/Build/Products/Release"
@@ -146,7 +160,7 @@ jobs:
           echo "📦 Creating archive: ${{ matrix.archive-name }}"
           
           if [ "${{ matrix.build }}" = "windows" ]; then
-            # Windows 使用 zip（更兼容）
+            # Windows 使用 zip
             zip -r "${{ matrix.archive-name }}" ./*
           else
             # Linux/Mac 使用 tar.gz
@@ -182,7 +196,7 @@ jobs:
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          files: downloaded_artifacts/**/*.tar.gz
+          files: downloaded_artifacts/**/*.tar.gz, downloaded_artifacts/**/*.zip
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
