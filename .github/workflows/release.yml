@@ -1,71 +1,48 @@
-name: Build Windows App
-
-permissions:
-  contents: write
+name: Build Windows App (Simplified)
 
 on:
-  workflow_dispatch: {}  # 手动触发
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch: {}
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-2022
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          submodules: recursive
-          fetch-depth: 0
+      - uses: actions/checkout@v5
 
-      # 设置 Visual Studio 2022 环境
+      # 关键：设置 VS 环境
       - name: Setup Visual Studio
         uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
-          vs_version: '2022'
 
       # 安装 Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.22.4"  # 使用更稳定的版本，如果3.27不行可以改这个
-          cache: true
+          flutter-version: '3.22.4'
+          channel: 'stable'
 
-      # 启用 Windows 桌面支持
-      - name: Enable Windows Desktop
-        run: flutter config --enable-windows-desktop
-
-      # 修改 CMakeLists.txt 使用 VS 2022
-      - name: Fix CMake configuration
+      # 验证环境
+      - name: Check environment
         run: |
-          $cmakeFile = "windows/CMakeLists.txt"
-          if (Test-Path $cmakeFile) {
-            (Get-Content $cmakeFile) -replace 'Visual Studio 16 2019', 'Visual Studio 17 2022' | Set-Content $cmakeFile
-            Write-Host "✅ Updated CMakeLists.txt"
-          }
-        shell: powershell
-
-      # 安装依赖
-      - name: Install Dependencies
-        run: flutter pub get
+          flutter doctor -v
+          cmake --version
+          where cl
+        shell: cmd
 
       # 构建
-      - name: Build Windows App
+      - name: Build
         run: flutter build windows --release
-        env:
-          VisualStudioVersion: '17.0'
 
       # 打包
       - name: Package
         run: |
-          Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "flutter-app-windows.zip"
-          Write-Host "✅ Build complete: flutter-app-windows.zip"
+          mkdir release
+          xcopy /E /I "build\windows\x64\runner\Release" "release\flutter_app"
+          cd release
+          tar -czf ../flutter-app-windows.tar.gz .
 
-      # 上传
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: flutter-app-windows.zip
+          path: flutter-app-windows.tar.gz
