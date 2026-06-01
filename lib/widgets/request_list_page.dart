@@ -347,15 +347,18 @@ class _RequestRecordItem extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                       // URL
-                      Text(
-                        _truncateUrl(record.url),
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: colors.textPrimary,
-                          height: 1.4,
+                      Tooltip(
+                        message: record.url,
+                        child: Text(
+                          _truncateUrl(record.url),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: colors.textPrimary,
+                            height: 1.4,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       // 底部信息
@@ -464,7 +467,7 @@ class _RequestRecordItem extends ConsumerWidget {
   }
 
   String _truncateUrl(String url) {
-    if (url.length <= 50) return url;
+    if (url.length <= 500) return url;
     final uri = Uri.tryParse(url);
     if (uri != null) {
       return '${uri.scheme}://${uri.host}${uri.path.length > 20 ? '...' : uri.path}';
