@@ -9,6 +9,7 @@ class MockRule {
   final bool enabled;
   final String? remark;
   final int hitCount;
+  final Map<String, dynamic>? requestParam;
 
   MockRule({
     required this.id,
@@ -17,7 +18,8 @@ class MockRule {
     required this.mockData,
     required this.enabled,
     this.remark,
-    this.hitCount = 0
+    this.hitCount = 0,
+    this.requestParam,
   });
 
   factory MockRule.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class MockRule {
       mockData: json['mockData'],
       enabled: json['enabled'] ?? false,
       remark: json['remark'],
+      requestParam: json['requestParam'] as Map<String, dynamic>?,
     );
   }
 
@@ -39,6 +42,7 @@ class MockRule {
       'mockData': mockData,
       'enabled': enabled,
       'remark': remark,
+      'requestParam': requestParam,
     };
   }
 
@@ -50,6 +54,7 @@ class MockRule {
     bool? enabled,
     String? remark,
     int? hitCount,
+    Map<String, dynamic>? requestParam,
   }) {
     return MockRule(
       id: id ?? this.id,
@@ -59,6 +64,7 @@ class MockRule {
       enabled: enabled ?? this.enabled,
       remark: remark ?? this.remark,
       hitCount: hitCount ?? this.hitCount,
+      requestParam: requestParam ?? this.requestParam,
     );
   }
 }

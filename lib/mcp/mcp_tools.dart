@@ -113,6 +113,7 @@ class MCPTools {
         mockData: addParams.mockData,
         enabled: addParams.enabled,
         remark: addParams.remark,
+        requestParam: addParams.requestParam,
       );
 
       return {

@@ -18,6 +18,7 @@ class AddRuleParams {
   final String mockData;
   final bool enabled;
   final String? remark;
+  final Map<String, dynamic>? requestParam;
 
   AddRuleParams({
     required this.url,
@@ -25,6 +26,7 @@ class AddRuleParams {
     required this.mockData,
     required this.enabled,
     this.remark,
+    this.requestParam,
   });
 
   factory AddRuleParams.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class AddRuleParams {
       mockData: json['mockData'] as String,
       enabled: json['enabled'] as bool,
       remark: json['remark'] as String?,
+      requestParam: json['requestParam'] as Map<String, dynamic>?,
     );
   }
 
@@ -44,6 +47,7 @@ class AddRuleParams {
       'mockData': mockData,
       'enabled': enabled,
       'remark': remark,
+      'requestParam': requestParam,
     };
   }
 }

@@ -14,6 +14,26 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
     _loadRules();
   }
 
+  bool _matchRequestParam(Map<String, dynamic>? ruleParam, Map<String, dynamic> requestData) {
+    if (ruleParam == null || ruleParam.isEmpty) {
+      return true;
+    }
+    final requestDataParam = requestData['requestOptions']['data'] as Map<String, dynamic>? ?? {};
+    
+    for (final entry in ruleParam.entries) {
+      final key = entry.key;
+      final expectedValue = entry.value;
+      if (!requestDataParam.containsKey(key)) {
+        return false;
+      }
+      final actualValue = requestDataParam[key];
+      if (actualValue != expectedValue) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<Map<String, dynamic>> handleRequest(
       Map<String, dynamic> requestData) async {
     final String requestId = requestData['requestId']?.toString() ?? 'unknown';
@@ -26,8 +46,11 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
         method: requestData['requestOptions']['method'] ?? 'unknown',
         statusCode: requestData['statusCode']);
 
-    final targetIndex = state.mockRules.indexWhere(
-        (e) => e.enabled && e.url == record.url && e.method == record.method);
+    final targetIndex = state.mockRules.indexWhere((e) => 
+        e.enabled && 
+        e.url == record.url && 
+        e.method == record.method &&
+        _matchRequestParam(e.requestParam, requestData));
 
     if (targetIndex != -1) {
       final target = state.mockRules[targetIndex];
@@ -54,6 +77,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
     required String mockData,
     required bool enabled,
     String? remark,
+    Map<String, dynamic>? requestParam,
   }) async {
     final newRule = MockRule(
       id: DateTime.now().toIso8601String(),
@@ -62,6 +86,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
       mockData: mockData,
       enabled: enabled,
       remark: remark,
+      requestParam: requestParam,
     );
     
     List<MockRule> newRules;
@@ -88,6 +113,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
     required String mockData,
     required bool enabled,
     String? remark,
+    Map<String, dynamic>? requestParam,
   }) async {
     List<MockRule> newRules;
     
@@ -100,6 +126,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
             mockData: mockData,
             enabled: enabled,
             remark: remark,
+            requestParam: requestParam,
           );
         }
         if (rule.url == url && rule.method == method) {
@@ -116,6 +143,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
             mockData: mockData,
             enabled: enabled,
             remark: remark,
+            requestParam: requestParam,
           );
         }
         return rule;

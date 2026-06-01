@@ -25,13 +25,15 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             required String mockData,
             required bool enabled,
             String? remark,
-            String? id}) {
+            String? id,
+            Map<String, dynamic>? requestParam}) {
           ref.read(mockResponseViewModelProvider.notifier).addRule(
                 url: url,
                 method: method,
                 mockData: mockData,
                 enabled: enabled,
                 remark: remark,
+                requestParam: requestParam,
               );
         },
       ),
@@ -49,7 +51,8 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
             required String mockData,
             required bool enabled,
             String? remark,
-            String? id}) {
+            String? id,
+            Map<String, dynamic>? requestParam}) {
           if (id != null) {
             ref.read(mockResponseViewModelProvider.notifier).updateRule(
                   id: id,
@@ -58,6 +61,7 @@ class _MockResponsePageState extends ConsumerState<MockResponsePage> {
                   mockData: mockData,
                   enabled: enabled,
                   remark: remark,
+                  requestParam: requestParam,
                 );
           }
         },
