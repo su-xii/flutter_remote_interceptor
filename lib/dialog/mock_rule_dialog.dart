@@ -60,6 +60,15 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
     super.dispose();
   }
 
+  void _showFullScreenEditor() {
+    showDialog(
+      context: context,
+      builder: (context) => FullScreenEditor(
+        controller: _mockDataController,
+      ),
+    );
+  }
+
   void _handleSave() {
     final colors = ref.read(themeProvider);
     if (_urlController.text.isEmpty) {
@@ -301,34 +310,60 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
                     const SizedBox(height: 16),
 
                     // Mock 数据输入框
-                    TextFormField(
-                      controller: _mockDataController,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        labelText: 'Mock数据',
-                        hintText: '{"code": 200, "data": {}}',
-                        prefixIcon: const Icon(Icons.code, size: 20),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: colors.textSecondary.withOpacity(0.3),
-                            width: 1.5,
+                    Container(
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Mock数据',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: colors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: _showFullScreenEditor,
+                                icon: const Icon(Icons.fullscreen, size: 20),
+                                tooltip: '全屏编辑',
+                                color: colors.textSecondary,
+                              ),
+                            ],
                           ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: colors.primary,
-                            width: 2,
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _mockDataController,
+                            maxLines: 4,
+                            decoration: InputDecoration(
+                              hintText: '{"code": 200, "data": {}}',
+                              prefixIcon: const Icon(Icons.code, size: 20),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(
+                                  color: colors.textSecondary.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(
+                                  color: colors.primary,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                            ),
                           ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -458,5 +493,95 @@ class _MockRuleDialogState extends ConsumerState<MockRuleDialog> {
         final colors = ref.read(themeProvider);
         return colors.textSecondary;
     }
+  }
+}
+
+class FullScreenEditor extends ConsumerWidget {
+  final TextEditingController controller;
+
+  const FullScreenEditor({
+    super.key,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeProvider);
+
+    return Dialog(
+      insetPadding: EdgeInsets.zero,
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: colors.bgPage,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: colors.bgCard,
+                border: Border(
+                  bottom: BorderSide(
+                    color: colors.textSecondary.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Mock数据 - 全屏编辑',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 24),
+                    color: colors.textSecondary,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: colors.bgCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colors.textSecondary.withOpacity(0.2),
+                    ),
+                  ),
+                  child: TextFormField(
+                    controller: controller,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    decoration: InputDecoration(
+                      hintText: '{"code": 200, "data": {}}',
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colors.textPrimary,
+                      fontFamily: 'Monaco, Menlo, monospace',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
