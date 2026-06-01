@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/data/local/mock_rule_store.dart';
 import 'package:remote_interceptor/model/mock_rule.dart';
@@ -36,7 +38,7 @@ class MockResponseViewModel extends StateNotifier<MockResponseState> {
         return rule;
       }).toList();
       state = state.copyWith(mockRules: newRules);
-      requestData['data'] = target.mockData;
+      requestData['data'] = json.decode(target.mockData) as Map<String, dynamic>;
     }
     return requestData;
   }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:remote_interceptor/providers/providers.dart';
@@ -257,7 +259,7 @@ class _RequestRecordItem extends ConsumerWidget {
       icon: Icons.add,
       onTap: () {
         final mockData = record.modifiedData ?? record.originalData;
-        final mockDataStr = mockData['data']?.toString() ?? '{}';
+        final mockDataStr = json.encode(mockData['data']);
         ref.read(mockResponseViewModelProvider.notifier).addRule(
               url: record.url,
               method: record.method,

@@ -40,8 +40,7 @@ class ResponseEditViewModel extends StateNotifier<ResponseEditState> {
     }
 
     const JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    // 这里使用data
-    final String jsonText = encoder.convert(requestData['data']);
+    final String jsonText = encoder.convert(requestData);
 
     final completer = Completer<Map<String, dynamic>>();
     final task = InterceptTask(recordId, jsonText, completer);
@@ -73,8 +72,7 @@ class ResponseEditViewModel extends StateNotifier<ResponseEditState> {
       requestRecords: updatedRecords,
     );
 
-    requestData['data'] = modifiedData;
-    return requestData;
+    return modifiedData;
   }
 
   void handleSave() {
