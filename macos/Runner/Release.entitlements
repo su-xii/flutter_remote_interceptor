@@ -4,5 +4,12 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+	<!-- 允许作为客户端发起网络请求（UDP 发送/接收、主动连接别人的 WS 服务需要这个） -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!-- 允许作为服务端监听网络端口（你的应用作为 WS 服务器，以及接收 UDP 广播需要这个） -->
+    <key>com.apple.security.network.server</key>
+    <true/>
 </dict>
 </plist>
