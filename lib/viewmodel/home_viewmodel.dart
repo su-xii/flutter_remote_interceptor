@@ -13,8 +13,16 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
   final RemoteServer _remoteServer;
   final RequestHandler _editHandler;
+  /// 全局 Mock 的请求处理（按全局规则命中改写）
   final RequestHandler _mockHandler;
-  HomeViewModel(this._remoteServer,this._editHandler,this._mockHandler):super(HomeState.initial()){
+  /// 页面级 Mock 的请求处理（仅当前页面关联接口命中改写）
+  final RequestHandler _pageMockHandler;
+  HomeViewModel(
+    this._remoteServer,
+    this._editHandler,
+    this._mockHandler,
+    this._pageMockHandler,
+  ):super(HomeState.initial()){
     _switchRequestHandler();
   }
 
@@ -31,7 +39,11 @@ class HomeViewModel extends StateNotifier<HomeState> {
   void _switchRequestHandler(){
     _remoteServer.requestHandler = switch(state.interceptorMode){
       InterceptorMode.edit => _editHandler,
-      InterceptorMode.mock => _mockHandler,
+      // Mock 模式下再按「互斥的 Mock 策略」二选一：全局 / 页面级
+      InterceptorMode.mock => switch(state.mockStrategy){
+        MockStrategy.global => _mockHandler,
+        MockStrategy.page => _pageMockHandler,
+      },
     };
   }
 
@@ -42,6 +54,16 @@ class HomeViewModel extends StateNotifier<HomeState> {
         ]);
     _switchRequestHandler();
     pageController.animateToPage(state.interceptorMode.index, duration: Duration(milliseconds: 150), curve: Curves.linear);
+  }
+
+  /// 切换 Mock 策略。
+  ///
+  /// 全局 Mock 与页面级 Mock 互斥，同一时刻仅一个生效；
+  /// 由 Mock 模式的 Tab 切换触发（Tab 即策略），切换即时生效、无需重启。
+  void switchMockStrategy(MockStrategy strategy) {
+    if (state.mockStrategy == strategy) return;
+    state = state.copyWith(mockStrategy: strategy);
+    _switchRequestHandler();
   }
 
   void goToDeviceDiscovery() {

@@ -6,10 +6,12 @@ import 'package:remote_interceptor/viewmodel/response_edit_viewmodel.dart';
 
 import '../state/device_discovery_state.dart';
 import '../state/home_state.dart';
+import '../state/mock_page_state.dart';
 import '../state/mock_response_state.dart';
 import '../state/server_status_state.dart';
 import '../viewmodel/device_discovery_viewmodel.dart';
 import '../viewmodel/home_viewmodel.dart';
+import '../viewmodel/mock_page_viewmodel.dart';
 import '../viewmodel/mock_response_viewmodel.dart';
 import '../viewmodel/server_status_viewmodel.dart';
 
@@ -22,7 +24,17 @@ final homeViewModelProvider = StateNotifierProvider.autoDispose<HomeViewModel, H
     return HomeViewModel(
         ref.read(remoteServerProvider),
         ref.watch(responseEditViewModelProvider.notifier).handleRequest,
+        // 全局 Mock
         ref.watch(mockResponseViewModelProvider.notifier).handleRequest,
+        // 页面级 Mock（与全局 Mock 互斥，由 HomeViewModel 按策略分派）
+        ref.watch(mockPageViewModelProvider.notifier).handleRequest,
+    );
+});
+
+final mockPageViewModelProvider = StateNotifierProvider.autoDispose<MockPageViewModel, MockPageState>((ref) {
+    return MockPageViewModel(
+        ref.read(mockPageStoreProvider),
+        ref.read(remoteServerProvider),
     );
 });
 

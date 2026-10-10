@@ -14,6 +14,11 @@ class RemoteServer {
       }
       return data;
     };
+    // 非请求类消息（指令回执 / 预留的事件）：只回调与广播，不回包
+    _server.eventHandler = (message) {
+      eventHandler?.call(message);
+      _eventController.add(message);
+    };
     _server.onClientConnect = (){
       _clientConnectionStatus = ClientConnectionStatus.connected;
       _clientConnectController.add(());
@@ -22,6 +27,9 @@ class RemoteServer {
   }
 
   RequestHandler? requestHandler; // 请求处理
+
+  /// 非请求类消息回调（`commandResult` 指令回执、预留的 `event`）
+  void Function(Map<String, dynamic> message)? eventHandler;
   void Function()? onClientDisconnect; // 客户端断开连接回调
   // void Function()? onClientConnect; // 客户端断连接成功回调
   void Function()? onServerRunning;// 服务器启动成功回调
@@ -36,6 +44,15 @@ class RemoteServer {
   final _clientConnectController = StreamController<()>.broadcast();
   // 对外提供订阅
   Stream<()> get onClientConnect => _clientConnectController.stream;
+
+  // 非请求类消息（指令回执等）广播流，允许任意数量的 ViewModel 同时订阅
+  final _eventController = StreamController<Map<String, dynamic>>.broadcast();
+  // 对外提供订阅
+  Stream<Map<String, dynamic>> get events => _eventController.stream;
+
+  /// 向手机端主动下发指令（如跳转指令 `jump`）。
+  /// fire-and-forget：不等待回执，回执通过 [events] 异步接收。
+  void sendCommand(Map<String, dynamic> command) => _server.sendCommand(command);
 
 
   Future<void> start() async {
