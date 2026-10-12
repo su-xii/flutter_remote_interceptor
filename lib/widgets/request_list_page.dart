@@ -290,10 +290,13 @@ class _RequestRecordItem extends ConsumerWidget {
     );
   }
 
-  /// 写入页面级 Mock：该页面下若已有相同「方法 + 路径」的配置则覆盖其 Mock 数据
+  /// 写入页面级 Mock。
+  ///
+  /// 与全局 Mock 的新增逻辑一致：**允许同一「方法 + 路径」存在多条配置**（便于分别微调），
+  /// 新增的默认为启用状态，同组已有配置会被自动禁用，即「后添加的生效」。
   void _addToPageMock(WidgetRef ref, MockPageConfig page) {
     final mockData = record.modifiedData ?? record.originalData;
-    ref.read(mockPageViewModelProvider.notifier).upsertApiByRequest(
+    ref.read(mockPageViewModelProvider.notifier).addApi(
           pageId: page.id,
           method: record.method,
           path: record.url,

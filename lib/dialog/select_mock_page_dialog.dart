@@ -12,6 +12,8 @@ typedef OnMockPageSelected = void Function(MockPageConfig page);
 ///
 /// 列表取自页面级 Mock 的配置（`mockPageViewModelProvider`），
 /// 用于把「请求记录」里的某条响应数据添加到指定页面下。
+/// 允许重复添加（同一接口可存在多条配置，后添加的生效），因此每次选择都会
+/// 在目标页面下新增一条接口配置。
 /// 选中后会自动关闭弹窗，再由调用方完成写入。
 class SelectMockPageDialog extends ConsumerWidget {
   final OnMockPageSelected onSelected;
