@@ -211,6 +211,44 @@ class MockPageViewModel extends StateNotifier<MockPageState> {
     await _savePages(pages);
   }
 
+  /// 从「请求记录」把一次请求的响应数据添加到指定页面。
+  ///
+  /// 若该页面下已存在相同「方法 + 路径」的配置，则**覆盖其 Mock 数据**（避免产生重复配置），
+  /// 否则新增一条启用配置。接口路径直接用上报的完整 URL，命中判定已兼容完整 URL 与纯路径。
+  Future<void> upsertApiByRequest({
+    required String pageId,
+    required HttpMethod method,
+    required String path,
+    required String response,
+  }) async {
+    final pageIndex = state.pages.indexWhere((page) => page.id == pageId);
+    if (pageIndex == -1) return;
+
+    final page = state.pages[pageIndex];
+    final existingIndex = page.apis.indexWhere(
+      (api) => api.method == method && api.path == path,
+    );
+
+    if (existingIndex >= 0) {
+      await updateApi(
+        pageId: pageId,
+        apiIndex: existingIndex,
+        method: method,
+        path: path,
+        response: response,
+        remark: page.apis[existingIndex].remark,
+      );
+      return;
+    }
+
+    await addApi(
+      pageId: pageId,
+      method: method,
+      path: path,
+      response: response,
+    );
+  }
+
   /// 切换某个接口配置的启用状态。
   ///
   /// 与全局 Mock 规则一致：同一页面下可以有多个配置，但「方法 + 路径」相同的配置**互斥**，

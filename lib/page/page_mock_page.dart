@@ -14,16 +14,7 @@ import 'package:remote_interceptor/widgets/api_method_badge.dart';
 import 'package:remote_interceptor/widgets/context_menu.dart';
 import 'package:remote_interceptor/widgets/hit_counter_widget.dart';
 import 'package:remote_interceptor/widgets/json_preview.dart';
-
-/// 页面级 Mock 的首字图标配色（对齐需求原型）
-const List<Color> _kPageIconColors = [
-  Color(0xFF2D6DF6),
-  Color(0xFF8B5CF6),
-  Color(0xFFEC4899),
-  Color(0xFFF59E0B),
-  Color(0xFF10B981),
-  Color(0xFF3B82F6),
-];
+import 'package:remote_interceptor/widgets/page_icon_avatar.dart';
 
 /// 页面级 Mock（Mock 模式下的第二个 Tab）。
 ///
@@ -303,14 +294,14 @@ class _PageMockListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _iconColor(page.colorIndex);
+    final iconColor = pageIconColor(page.colorIndex);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isCurrent ? colors.withOpacity(0.4) : Colors.transparent,
+          color: isCurrent ? iconColor.withOpacity(0.4) : Colors.transparent,
         ),
         boxShadow: [
           BoxShadow(
@@ -330,29 +321,10 @@ class _PageMockListItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             child: Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: colors,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.withOpacity(0.25),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    page.displayIconChar,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                PageIconAvatar(
+                  char: page.displayIconChar,
+                  colorIndex: page.colorIndex,
+                  size: 48,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -570,32 +542,12 @@ class _PageMockDetailView extends ConsumerWidget {
   }
 
   Widget _buildTitleRow(AppColors colors) {
-    final iconColor = _iconColor(page.colorIndex);
     return Row(
       children: [
-        Container(
-          width: 56,
-          height: 56,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: iconColor,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: iconColor.withOpacity(0.22),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Text(
-            page.displayIconChar,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
+        PageIconAvatar(
+          char: page.displayIconChar,
+          colorIndex: page.colorIndex,
+          size: 56,
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -1297,8 +1249,4 @@ class _ExportConfigDialog extends ConsumerWidget {
   }
 }
 
-/// 按配色索引取首字图标背景色
-Color _iconColor(int colorIndex) {
-  if (colorIndex < 0) return _kPageIconColors.first;
-  return _kPageIconColors[colorIndex % _kPageIconColors.length];
-}
+

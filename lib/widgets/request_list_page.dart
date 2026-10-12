@@ -7,6 +7,8 @@ import 'package:remote_interceptor/providers/theme_provider.dart';
 import 'package:remote_interceptor/model/request_record.dart';
 import 'package:remote_interceptor/providers/viemodel_provider.dart';
 import 'package:remote_interceptor/dialog/request_detail_dialog.dart';
+import 'package:remote_interceptor/dialog/select_mock_page_dialog.dart';
+import 'package:remote_interceptor/model/mock_page.dart';
 import 'package:remote_interceptor/widgets/context_menu.dart';
 
 /// 请求记录列表页面
@@ -255,7 +257,7 @@ class _RequestRecordItem extends ConsumerWidget {
     }
 
     items.add(ContextMenuItem(
-      label: '添加到 Mock',
+      label: '添加到全局Mock',
       icon: Icons.add,
       onTap: () {
         final mockData = record.modifiedData ?? record.originalData;
@@ -269,7 +271,34 @@ class _RequestRecordItem extends ConsumerWidget {
       },
     ));
 
+    items.add(ContextMenuItem(
+      label: '添加到页面Mock',
+      icon: Icons.description_outlined,
+      onTap: () => _showSelectMockPageDialog(context, ref),
+    ));
+
     return items;
+  }
+
+  /// 弹出「选择页面」弹窗，把当前请求的响应数据添加到所选页面下
+  void _showSelectMockPageDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => SelectMockPageDialog(
+        onSelected: (page) => _addToPageMock(ref, page),
+      ),
+    );
+  }
+
+  /// 写入页面级 Mock：该页面下若已有相同「方法 + 路径」的配置则覆盖其 Mock 数据
+  void _addToPageMock(WidgetRef ref, MockPageConfig page) {
+    final mockData = record.modifiedData ?? record.originalData;
+    ref.read(mockPageViewModelProvider.notifier).upsertApiByRequest(
+          pageId: page.id,
+          method: record.method,
+          path: record.url,
+          response: json.encode(mockData['data']),
+        );
   }
 
   @override
